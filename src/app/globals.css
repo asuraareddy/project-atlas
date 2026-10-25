@@ -120,48 +120,51 @@ body {
    ================================================================== */
 
 html.light {
-  --color-surface: #f4f3f7;
-  --color-surface-2: #eae8f0;
-  --color-surface-3: #e0dce9;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-surface-3: #e4e4e7;
   --color-neutral: #ffffff;
-  --color-neutral-2: #f8f7fc;
+  --color-neutral-2: #f4f4f5;
   --color-on-surface: #18181b;
   --color-on-surface-muted: #52525b;
-  --color-border: rgba(0, 0, 0, 0.12);
-  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(126, 10, 194, 0.12) 0%, rgba(244, 243, 247, 0) 70%);
+  --color-border: #e4e4e7;
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(126, 10, 194, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
 }
 
 html.light body {
-  background-color: #f4f3f7 !important;
+  background-color: #ffffff !important;
   color: #18181b !important;
 }
 
 html.light header {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-bottom-color: #e4e4e7 !important;
 }
 
 html.light footer {
-  background-color: #ffffff !important;
-  border-top-color: rgba(0, 0, 0, 0.08) !important;
+  background-color: #fafafa !important;
+  border-top-color: #e4e4e7 !important;
 }
 
 html.light .bg-\[\#1f1f1f\] {
   background-color: #ffffff !important;
-  color: #18181b;
+  color: #18181b !important;
 }
 
 html.light .bg-\[\#1a1a1a\] {
-  background-color: #f8f7fb !important;
+  background-color: #fafafc !important;
+  border-color: #e4e4e7 !important;
 }
 
 html.light .bg-\[\#242424\] {
   background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 html.light .bg-\[\#2a2a2a\] {
-  background-color: #f2eff8 !important;
+  background-color: #f4f4f5 !important;
+  border-color: #e4e4e7 !important;
 }
 
 html.light .text-white {
@@ -183,13 +186,15 @@ html.light .text-\[\#9c9aa8\] {
 html.light .border-white\/10,
 html.light .border-white\/15,
 html.light .border-white\/5 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: #e4e4e7 !important;
 }
 
 html.light input,
 html.light select,
 html.light textarea {
+  background-color: #ffffff !important;
   color: #18181b !important;
+  border-color: #d4d4d8 !important;
 }
 
 /* Retain high-contrast white text for colored brand buttons & badges */

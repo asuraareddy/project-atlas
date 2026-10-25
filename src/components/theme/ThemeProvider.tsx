@@ -92,18 +92,18 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all select-none border border-white/15 hover:border-[#b45df0] active:scale-95 ${
+      className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all select-none border active:scale-95 ${
         isDark
-          ? 'bg-[#242424] text-[#f59e0b] hover:bg-white/10'
-          : 'bg-white text-[#7e0ac2] hover:bg-black/5 shadow-sm'
+          ? 'bg-[#242424] text-[#b45df0] border-white/15 hover:border-[#b45df0] hover:bg-white/10 shadow-sm'
+          : 'bg-white text-[#f59e0b] border-zinc-200 hover:bg-zinc-50 shadow-sm ring-1 ring-amber-400/30'
       } ${className}`}
-      title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-      aria-label={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
+      title={isDark ? 'Dark Mode (Click for White Mode)' : 'White Mode (Click for Dark Mode)'}
+      aria-label={isDark ? 'Dark Mode (Click for White Mode)' : 'White Mode (Click for Dark Mode)'}
     >
       {isDark ? (
-        <Sun className="w-4 h-4 transition-transform hover:rotate-45" />
+        <Moon className="w-4 h-4 transition-transform hover:-rotate-12 text-[#b45df0]" />
       ) : (
-        <Moon className="w-4 h-4 transition-transform hover:-rotate-12" />
+        <Sun className="w-4 h-4 transition-transform hover:rotate-45 text-[#f59e0b]" />
       )}
     </button>
   );
