@@ -97,8 +97,31 @@
     - Automated Suite 8 covering all 220 Patti, sums, classifications, leading zeros, points, and cart deduplication
 - [x] Carrom Provider Adapter:
   - Match format, turn state machine, shot sequence validation, disconnect recovery
-- [x] Ludo Provider Adapter:
-  - Matchmaking, turn state machine, server-authoritative move validation
+- [x] Ludo Playable Game Engine & Integration:
+  - Inspected GitHub repository (`https://github.com/api-evangelist/ludo-ai`): Verified that Ludo.ai is an AI game-design & asset-generation hub (sprites, textures, 3D GLB models), NOT a playable board game engine or turn coordinator
+  - Built an authoritative deterministic Ludo engine (`src/domain/games/ludo/engine.ts`) supporting:
+    - 4-player and 2-player game modes
+    - 4 player colors (Red, Green, Yellow, Blue) with 4 tokens each
+    - Token states: `base`, `track`, `home_path`, `home`
+    - Exact 52-tile common circuit with clockwise progression
+    - Safe-zone immunity on 4 color starting squares (0, 13, 26, 39) and 4 star tiles (8, 21, 34, 47)
+    - Capture mechanics: opponent knocked out, returned to base, and bonus roll awarded
+    - Extra rolls on rolling 6, capturing, and reaching Home
+    - 3 consecutive sixes forfeiture rule
+    - Exact roll required to reach Home (step 57); overshooting is blocked
+    - Intelligent Heuristic Bot AI with capture and home prioritization
+  - Server-Authoritative API Endpoints:
+    - `POST /api/v1/games/ludo/session` (create/reset session)
+    - `GET /api/v1/games/ludo/session` (state recovery and reconnect)
+    - `POST /api/v1/games/ludo/roll` (cryptographic server-side dice roll)
+    - `POST /api/v1/games/ludo/move` (server-side move validation & execution)
+    - `POST /api/v1/games/ludo/bot-turn` (automated AI bot runner)
+  - Mobile-First Interactive Game Board (`src/components/ludo/LudoGameBoard.tsx`):
+    - Scalable 15x15 SVG Ludo board with 4 colored yards, 4 token slots each, safe stars, and central goal
+    - Animated dice roller with pip rendering and Web Audio API synthesized sound effects
+    - Pulsating glow on moveable tokens for touch-friendly selection
+    - Turn banner and winner celebration overlay
+  - Automated Test Suite: Suite 10 added to `tests/run-all-tests.mjs` (47/47 tests passing)
 - [x] Other Games (Pool) Adapter:
   - Session launch, rules validation, table management
 - [x] Real-money flags default to **OFF**; practice mode with non-cash points

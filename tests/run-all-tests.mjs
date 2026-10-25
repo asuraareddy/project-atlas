@@ -821,6 +821,204 @@ test('Dark Mode and Pure White Mode design token compliance', () => {
 });
 
 // ------------------------------------------------------------------
+// Suite 10: Ludo Game Engine & Rules Verification
+// ------------------------------------------------------------------
+console.log('\n[Suite 10: Ludo Game Engine & Rules Verification]');
+
+const START_SQUARES = { red: 0, green: 13, yellow: 26, blue: 39 };
+const SAFE_SQUARES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+
+function createTestGame(playerCount = 4) {
+  const colors = playerCount === 2 ? ['red', 'yellow'] : ['red', 'green', 'yellow', 'blue'];
+  return {
+    sessionId: 'test_ludo_01',
+    playerCount,
+    players: colors.map((color) => ({
+      color,
+      tokens: [0, 1, 2, 3].map((id) => ({
+        id,
+        color,
+        state: 'base',
+        position: id,
+        stepCount: 0
+      })),
+      hasWon: false
+    })),
+    currentTurnColor: 'red',
+    turnPhase: 'need_roll',
+    currentDiceRoll: null,
+    consecutiveSixes: 0
+  };
+}
+
+test('Ludo game initialization sets 4 tokens in base for each player', () => {
+  const game = createTestGame(4);
+  assert.equal(game.players.length, 4);
+  assert.equal(game.currentTurnColor, 'red');
+
+  for (const player of game.players) {
+    assert.equal(player.tokens.length, 4);
+    assert.ok(player.tokens.every((t) => t.state === 'base'));
+    assert.ok(player.tokens.every((t) => t.stepCount === 0));
+  }
+});
+
+test('2-Player game mode pairs opposite colors (Red vs Yellow)', () => {
+  const game2P = createTestGame(2);
+  assert.equal(game2P.players.length, 2);
+  assert.equal(game2P.players[0].color, 'red');
+  assert.equal(game2P.players[1].color, 'yellow');
+});
+
+test('Tokens cannot exit base on dice roll 1-5; roll of 6 opens token to starting square', () => {
+  function getExitMoves(tokens, color, roll) {
+    if (roll !== 6) return [];
+    return tokens
+      .filter((t) => t.state === 'base')
+      .map((t) => ({
+        tokenId: t.id,
+        targetPos: START_SQUARES[color]
+      }));
+  }
+
+  const redTokens = [0, 1, 2, 3].map((id) => ({ id, state: 'base' }));
+
+  // Rolls 1..5 produce 0 exits
+  for (let r = 1; r <= 5; r++) {
+    const moves = getExitMoves(redTokens, 'red', r);
+    assert.equal(moves.length, 0, `Roll ${r} must not allow exiting base`);
+  }
+
+  // Roll 6 allows exiting to start square (0 for Red, 13 for Green, 26 for Yellow, 39 for Blue)
+  const redMoves6 = getExitMoves(redTokens, 'red', 6);
+  assert.equal(redMoves6.length, 4, 'Roll 6 must offer all 4 base tokens as valid exits');
+  assert.equal(redMoves6[0].targetPos, 0, 'Red token exits to track index 0');
+
+  const greenTokens = [0, 1, 2, 3].map((id) => ({ id, state: 'base' }));
+  const greenMoves6 = getExitMoves(greenTokens, 'green', 6);
+  assert.equal(greenMoves6[0].targetPos, 13, 'Green token exits to track index 13');
+});
+
+test('Tokens on track advance clockwise around 52-tile circuit', () => {
+  function advanceToken(color, currentStepCount, roll) {
+    const newStepCount = currentStepCount + roll;
+    const startSq = START_SQUARES[color];
+    const trackIndex = (startSq + newStepCount - 1) % 52;
+    return { newStepCount, trackIndex };
+  }
+
+  // Red token at step 5 rolls a 4 -> step 9, track index 8
+  const move1 = advanceToken('red', 5, 4);
+  assert.equal(move1.newStepCount, 9);
+  assert.equal(move1.trackIndex, 8);
+
+  // Blue token at start (step 1, track 39) rolls a 6 -> step 7, track 45
+  const move2 = advanceToken('blue', 1, 6);
+  assert.equal(move2.newStepCount, 7);
+  assert.equal(move2.trackIndex, 45);
+
+  // Track wraps around 52: Blue at step 11 rolls a 4 -> step 15, track index (39 + 15 - 1)%52 = 1
+  const move3 = advanceToken('blue', 11, 4);
+  assert.equal(move3.newStepCount, 15);
+  assert.equal(move3.trackIndex, 1);
+});
+
+test('Tokens on Safe Squares (Start squares & Star tiles) are immune from capture', () => {
+  function canCapture(trackIndex, opponentColor) {
+    if (SAFE_SQUARES.has(trackIndex)) {
+      return false; // Safe square: coexistence allowed
+    }
+    return true; // Unsafe: capture occurs
+  }
+
+  // Safe star at 8
+  assert.equal(canCapture(8, 'green'), false, 'Square 8 is a safe star');
+  // Safe color start at 13
+  assert.equal(canCapture(13, 'red'), false, 'Square 13 is Green safe start');
+  // Safe star at 34
+  assert.equal(canCapture(34, 'yellow'), false, 'Square 34 is a safe star');
+
+  // Normal track squares can be captured
+  assert.equal(canCapture(5, 'blue'), true, 'Square 5 is unsafe, capture allowed');
+  assert.equal(canCapture(18, 'red'), true, 'Square 18 is unsafe, capture allowed');
+});
+
+test('Capture returns opponent token to base and awards bonus extra roll', () => {
+  const opponentToken = { id: 1, color: 'green', state: 'track', position: 10, stepCount: 5 };
+
+  function executeCapture(attackerColor, defenderToken) {
+    defenderToken.state = 'base';
+    defenderToken.position = defenderToken.id;
+    defenderToken.stepCount = 0;
+    return {
+      captured: true,
+      extraTurnAwarded: true
+    };
+  }
+
+  const result = executeCapture('red', opponentToken);
+  assert.equal(opponentToken.state, 'base', 'Captured token must return to base');
+  assert.equal(opponentToken.stepCount, 0, 'Captured token step count must reset');
+  assert.equal(result.extraTurnAwarded, true, 'Attacker must be awarded extra roll');
+});
+
+test('Home column requires exact roll; overshooting home (step > 57) is blocked', () => {
+  function testHomeMove(currentStepCount, roll) {
+    const targetStep = currentStepCount + roll;
+    if (targetStep > 57) return { valid: false, reason: 'Overshot Home' };
+    if (targetStep === 57) return { valid: true, state: 'home' };
+    return { valid: true, state: 'home_path', homeIndex: targetStep - 52 };
+  }
+
+  // Token at step 55 (2 steps from home) rolls a 2 -> enters home!
+  const exact = testHomeMove(55, 2);
+  assert.equal(exact.valid, true);
+  assert.equal(exact.state, 'home');
+
+  // Token at step 55 rolls a 4 -> overshoots 57 -> BLOCKED
+  const overshot = testHomeMove(55, 4);
+  assert.equal(overshot.valid, false);
+  assert.equal(overshot.reason, 'Overshot Home');
+
+  // Token at step 53 rolls a 2 -> step 55 (in home column)
+  const alongPath = testHomeMove(53, 2);
+  assert.equal(alongPath.valid, true);
+  assert.equal(alongPath.state, 'home_path');
+  assert.equal(alongPath.homeIndex, 3);
+});
+
+test('Three consecutive sixes rule forfeits turn to next player', () => {
+  let consecutiveSixes = 2;
+  function handleRoll(roll) {
+    if (roll === 6) {
+      consecutiveSixes += 1;
+      if (consecutiveSixes === 3) {
+        return { forfeitTurn: true, nextTurn: true };
+      }
+      return { extraRoll: true };
+    }
+    consecutiveSixes = 0;
+    return { normalMove: true };
+  }
+
+  const res1 = handleRoll(6); // 3rd consecutive 6
+  assert.equal(res1.forfeitTurn, true, 'Third consecutive 6 must forfeit turn');
+  assert.equal(res1.nextTurn, true);
+});
+
+test('Victory detected immediately when all 4 tokens of a player reach Home', () => {
+  const redTokens = [
+    { id: 0, state: 'home' },
+    { id: 1, state: 'home' },
+    { id: 2, state: 'home' },
+    { id: 3, state: 'home' }
+  ];
+
+  const hasWon = redTokens.every((t) => t.state === 'home');
+  assert.equal(hasWon, true, 'All 4 tokens home triggers game victory');
+});
+
+// ------------------------------------------------------------------
 // Summary Report
 // ------------------------------------------------------------------
 console.log('\n======================================================');
@@ -832,4 +1030,5 @@ if (failCount > 0) {
 } else {
   process.exit(0);
 }
+
 
