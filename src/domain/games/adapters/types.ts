@@ -56,12 +56,21 @@ export interface ChartRecord {
 
 export interface ParticipationCommand {
   marketId: string;
-  entryType: 'single_digit' | 'jodi_digit' | 'single_pana' | 'double_pana' | 'triple_pana';
+  entryType: 'single_digit' | 'jodi_digit' | 'single_pana' | 'double_pana' | 'triple_pana' | 'single_patti' | 'double_patti' | 'triple_patti';
   selectedValues: string;
   stakeMinor: number; // Integer GBP pence
   currency: string;
   userId: string;
   idempotencyKey: string;
+  date?: string;
+  gameType?: 'OPEN' | 'CLOSE';
+  category?: 'single' | 'double' | 'triple' | 'single_patti' | 'double_patti' | 'triple_patti';
+  entries?: Array<{
+    pattiNumber: string;
+    points: number;
+    gameType: 'OPEN' | 'CLOSE';
+  }>;
+  totalPoints?: number;
 }
 
 export interface ParticipationReceipt {
@@ -75,6 +84,10 @@ export interface ParticipationReceipt {
   status: 'accepted' | 'pending' | 'rejected';
   acceptedAt: string;
   providerReference: string;
+  gameType?: 'OPEN' | 'CLOSE';
+  date?: string;
+  entriesCount?: number;
+  totalPoints?: number;
 }
 
 export interface GameRoom {

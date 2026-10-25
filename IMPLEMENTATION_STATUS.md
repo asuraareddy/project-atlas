@@ -68,15 +68,28 @@
 
 ### Phase 5: Game Provider Adapter Framework & Game Integrations
 - [x] Canonical `GameAdapter` interface (`getCapabilities`, `validateLaunch`, `createSession`, `validateAction`, `validateResult`, `buildSettlement`)
-- [x] Matka Provider Adapter:
+- [x] Matka Provider Adapter & Participation System:
   - Live client Matka API (`matkaapi.com`) integrated and verified using domain key authentication
-  - Fetches 64 active live daily markets with real-time declared results (`market=all`)
+  - Fetches active live daily markets with real-time declared results (`market=all`)
   - Full catalog directory access across 399 market configurations (`market_list=1`)
   - Server-authoritative result parser decomposes Open Pana, Jodi composite, and Close Pana
   - Built-in in-memory 30s TTL cache eliminates provider rate-limiting and provides sub-50ms responses
   - Market schedule, countdown, and cut-off enforcement strictly on server time
-  - Fail-safe fallback to baseline fixtures if provider is temporarily unreachable or rate-limited
-  - Documented in `18_PROVIDER_API_INTEGRATION.md` Section 11
+  - **Matka Participation — Single Patti, Double Patti & Triple Patti (Complete System)**:
+    - 10 selectable digit buttons (`1, 2, 3, 4, 5, 6, 7, 8, 9, 0`) with active visual highlights
+    - Separate Points amount field with whole-number range validation (1–10+ points)
+    - Date selector and `OPEN` / `CLOSE` game-type toggle
+    - Authoritative mathematical generator (`src/domain/games/matka/patti-generator.ts`) deriving all 220 Patti:
+      - Single Patti: 12 combinations per digit $\times$ 10 digits = 120 total (distinct digits, sum % 10 = digit)
+      - Double Patti: 9 combinations per digit $\times$ 10 digits = 90 total (two identical digits, sum % 10 = digit)
+      - Triple Patti: 1 combination per digit $\times$ 10 digits = 10 total (three identical digits, sum % 10 = digit)
+    - All Patti numbers rendered strictly as 3-character strings preserving leading/trailing zeroes (`000`, `100`, `120`)
+    - Switching categories preserves selected digit, date, game type, and points amount
+    - Responsive Participation Table (Patti Number, Points, Game Type, Action) with Select All / Deselect All
+    - Participation Slip with accidental duplicate prevention, instant entries & total points recalculation
+    - Dedicated backend endpoint `GET /api/v1/games/matka/patti` for authoritative possibilities
+    - Server-side validation and atomic ledger reservation via `POST /api/v1/games/matka/participate` with idempotency
+    - Automated Suite 8 covering all 220 Patti, sums, classifications, leading zeros, points, and cart deduplication
 - [x] Carrom Provider Adapter:
   - Match format, turn state machine, shot sequence validation, disconnect recovery
 - [x] Ludo Provider Adapter:

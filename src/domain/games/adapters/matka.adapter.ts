@@ -504,6 +504,24 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
       throw new Error('Invalid stake: must be greater than zero.');
     }
 
+    // Validate entries if provided (multi-patti participation)
+    if (command.entries && Array.isArray(command.entries)) {
+      if (command.entries.length === 0) {
+        throw new Error('No Patti entries selected for participation.');
+      }
+      for (const entry of command.entries) {
+        if (!entry.pattiNumber || !/^\d{3}$/.test(entry.pattiNumber)) {
+          throw new Error(`Invalid Patti combination '${entry.pattiNumber}': must be exactly 3 digits.`);
+        }
+        if (!entry.points || !Number.isInteger(entry.points) || entry.points < 1) {
+          throw new Error(`Invalid points '${entry.points}' for Patti '${entry.pattiNumber}': must be an integer >= 1.`);
+        }
+        if (entry.gameType && !['OPEN', 'CLOSE'].includes(entry.gameType)) {
+          throw new Error(`Invalid gameType '${entry.gameType}': must be OPEN or CLOSE.`);
+        }
+      }
+    }
+
     return {
       participationId: `part_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       marketId: market.id,
@@ -514,7 +532,11 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
       currency: command.currency,
       status: 'accepted',
       acceptedAt: new Date().toISOString(),
-      providerReference: `prov_matkaapi_${command.idempotencyKey.substring(0, 12)}`
+      providerReference: `prov_matkaapi_${command.idempotencyKey.substring(0, 12)}`,
+      gameType: command.gameType,
+      date: command.date,
+      entriesCount: command.entries ? command.entries.length : 1,
+      totalPoints: command.totalPoints || (command.entries ? command.entries.reduce((acc, e) => acc + e.points, 0) : undefined)
     };
   }
 

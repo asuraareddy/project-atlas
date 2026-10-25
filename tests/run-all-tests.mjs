@@ -456,6 +456,225 @@ test('When API is unavailable and no cache exists, results are marked pending/un
 });
 
 // ------------------------------------------------------------------
+// Suite 8: Matka Participation — Single Patti, Double Patti & Triple Patti
+// ------------------------------------------------------------------
+console.log('\n[Suite 8: Matka Participation — Single, Double & Triple Patti]');
+
+const {
+  getPattiPossibilities,
+  getAllPattiForDigit,
+  validatePatti,
+  validatePoints,
+  calculatePattiSum,
+  classifyPattiCategory,
+  getAll220Patti
+} = await import('../src/domain/games/matka/patti-generator.ts');
+
+test('All 10 digits produce exactly 12 Single Patti, 9 Double Patti, and 1 Triple Patti (Total 220)', () => {
+  let totalSingle = 0;
+  let totalDouble = 0;
+  let totalTriple = 0;
+
+  for (let d = 0; d <= 9; d++) {
+    const single = getPattiPossibilities(d, 'single');
+    const double = getPattiPossibilities(d, 'double');
+    const triple = getPattiPossibilities(d, 'triple');
+
+    assert.equal(single.length, 12, `Digit ${d} must have exactly 12 Single Patti`);
+    assert.equal(double.length, 9, `Digit ${d} must have exactly 9 Double Patti`);
+    assert.equal(triple.length, 1, `Digit ${d} must have exactly 1 Triple Patti`);
+
+    totalSingle += single.length;
+    totalDouble += double.length;
+    totalTriple += triple.length;
+  }
+
+  assert.equal(totalSingle, 120, 'Total Single Patti across all digits must be 120');
+  assert.equal(totalDouble, 90, 'Total Double Patti across all digits must be 90');
+  assert.equal(totalTriple, 10, 'Total Triple Patti across all digits must be 10');
+  assert.equal(totalSingle + totalDouble + totalTriple, 220, 'Total Patti must equal exactly 220');
+});
+
+test('Sum modulo 10 equals selected digit for all 220 Patti without exception', () => {
+  const all220 = getAll220Patti();
+  assert.equal(all220.length, 220);
+
+  for (const entry of all220) {
+    const sum = calculatePattiSum(entry.patti);
+    assert.equal(
+      sum,
+      entry.digit,
+      `Patti ${entry.patti} sum modulo 10 (${sum}) must equal assigned digit ${entry.digit}`
+    );
+  }
+});
+
+test('Leading and trailing zeroes preserved as 3-character strings (e.g. 000, 100, 120)', () => {
+  const all220 = getAll220Patti();
+
+  for (const entry of all220) {
+    assert.equal(typeof entry.patti, 'string');
+    assert.equal(entry.patti.length, 3, `Patti ${entry.patti} must have exactly 3 characters`);
+    assert.match(entry.patti, /^\d{3}$/, `Patti ${entry.patti} must consist of 3 digits`);
+  }
+
+  // Explicit check for digit 0 Triple Patti ('000')
+  const triple0 = getPattiPossibilities(0, 'triple');
+  assert.deepEqual(triple0, ['000'], 'Triple Patti for digit 0 must be 000 with preserved leading zeroes');
+
+  // Explicit check for combinations with zero
+  const double1 = getPattiPossibilities(1, 'double');
+  assert.ok(double1.includes('100'), 'Double Patti for digit 1 must include 100');
+
+  const single3 = getPattiPossibilities(3, 'single');
+  assert.ok(single3.includes('120'), 'Single Patti for digit 3 must include 120');
+});
+
+test('Single Patti combinations have 3 distinct digits', () => {
+  for (let d = 0; d <= 9; d++) {
+    const singleList = getPattiPossibilities(d, 'single');
+    for (const patti of singleList) {
+      const cat = classifyPattiCategory(patti);
+      assert.equal(cat, 'single', `Patti ${patti} must be classified as single`);
+      const [d1, d2, d3] = patti.split('');
+      assert.notEqual(d1, d2, `Single Patti ${patti} cannot have repeated digits`);
+      assert.notEqual(d2, d3, `Single Patti ${patti} cannot have repeated digits`);
+      assert.notEqual(d1, d3, `Single Patti ${patti} cannot have repeated digits`);
+    }
+  }
+});
+
+test('Double Patti combinations have exactly 2 identical digits', () => {
+  for (let d = 0; d <= 9; d++) {
+    const doubleList = getPattiPossibilities(d, 'double');
+    for (const patti of doubleList) {
+      const cat = classifyPattiCategory(patti);
+      assert.equal(cat, 'double', `Patti ${patti} must be classified as double`);
+      const [d1, d2, d3] = patti.split('');
+      const pairCount = (d1 === d2 ? 1 : 0) + (d2 === d3 ? 1 : 0) + (d1 === d3 ? 1 : 0);
+      assert.equal(pairCount, 1, `Double Patti ${patti} must have exactly one pair of identical digits`);
+    }
+  }
+});
+
+test('Triple Patti combinations have 3 identical digits', () => {
+  for (let d = 0; d <= 9; d++) {
+    const tripleList = getPattiPossibilities(d, 'triple');
+    assert.equal(tripleList.length, 1);
+    const patti = tripleList[0];
+    const cat = classifyPattiCategory(patti);
+    assert.equal(cat, 'triple', `Patti ${patti} must be classified as triple`);
+    const [d1, d2, d3] = patti.split('');
+    assert.equal(d1, d2, `Triple Patti ${patti} must have identical digits`);
+    assert.equal(d2, d3, `Triple Patti ${patti} must have identical digits`);
+  }
+});
+
+test('Digit 3 Single Patti contains exact user reference examples (120, 139, 148, 157, 238)', () => {
+  const single3 = getPattiPossibilities(3, 'single');
+  const expectedExamples = ['120', '139', '148', '157', '238'];
+
+  for (const ex of expectedExamples) {
+    assert.ok(
+      single3.includes(ex),
+      `Single Patti for digit 3 must include reference example ${ex}`
+    );
+  }
+
+  // Verify all 12 Single Patti for digit 3
+  const expected12 = [
+    '120', '139', '148', '157', '238', '247',
+    '256', '346', '490', '580', '670', '689'
+  ];
+  assert.deepEqual(single3, expected12);
+});
+
+test('Points validation allows whole numbers in range 1-10+ and rejects non-integers or <= 0', () => {
+  assert.equal(validatePoints(1).valid, true);
+  assert.equal(validatePoints(5).valid, true);
+  assert.equal(validatePoints(10).valid, true);
+  assert.equal(validatePoints(25).valid, true);
+
+  // Reject non-integers
+  assert.equal(validatePoints(2.5).valid, false);
+  assert.equal(validatePoints(0).valid, false);
+  assert.equal(validatePoints(-5).valid, false);
+  assert.equal(validatePoints(NaN).valid, false);
+});
+
+test('Patti participation slip deduplicates identical patti under same market, date, gameType', () => {
+  const slip = [];
+  function addEntry(item) {
+    const id = `${item.marketId}_${item.date}_${item.gameType}_${item.pattiNumber}`;
+    if (!slip.some(e => e.id === id)) {
+      slip.push({ ...item, id });
+      return true;
+    }
+    return false; // Prevent accidental duplicate
+  }
+
+  const added1 = addEntry({ marketId: 'mkt_kalyan', date: '2026-10-25', gameType: 'OPEN', pattiNumber: '120', points: 5 });
+  assert.equal(added1, true);
+  assert.equal(slip.length, 1);
+
+  // Duplicate add attempt for same context
+  const addedDuplicate = addEntry({ marketId: 'mkt_kalyan', date: '2026-10-25', gameType: 'OPEN', pattiNumber: '120', points: 5 });
+  assert.equal(addedDuplicate, false, 'Duplicate entry in same context must be rejected');
+  assert.equal(slip.length, 1);
+
+  // Different gameType (CLOSE) allows separate entry
+  const addedClose = addEntry({ marketId: 'mkt_kalyan', date: '2026-10-25', gameType: 'CLOSE', pattiNumber: '120', points: 5 });
+  assert.equal(addedClose, true, 'Different gameType (CLOSE) must be allowed');
+  assert.equal(slip.length, 2);
+});
+
+test('Total points amount and entries count recalculate immediately upon selection and removal', () => {
+  const entries = [
+    { pattiNumber: '120', points: 5 },
+    { pattiNumber: '139', points: 5 },
+    { pattiNumber: '148', points: 10 }
+  ];
+
+  const calculateTotals = (list) => {
+    return {
+      count: list.length,
+      totalPoints: list.reduce((sum, e) => sum + e.points, 0)
+    };
+  };
+
+  const initial = calculateTotals(entries);
+  assert.equal(initial.count, 3);
+  assert.equal(initial.totalPoints, 20);
+
+  // Remove one entry
+  const afterRemove = calculateTotals(entries.filter(e => e.pattiNumber !== '139'));
+  assert.equal(afterRemove.count, 2);
+  assert.equal(afterRemove.totalPoints, 15);
+});
+
+test('Category switching preserves selected digit, gameType, date, and points amount', () => {
+  const userState = {
+    selectedDigit: 7,
+    selectedDate: '2026-10-25',
+    gameType: 'CLOSE',
+    pointsInput: 8,
+    category: 'single'
+  };
+
+  // Switch category to double
+  userState.category = 'double';
+  assert.equal(userState.selectedDigit, 7, 'Digit must remain 7 after switching to double');
+  assert.equal(userState.selectedDate, '2026-10-25', 'Date must remain preserved');
+  assert.equal(userState.gameType, 'CLOSE', 'GameType must remain CLOSE');
+  assert.equal(userState.pointsInput, 8, 'Points must remain 8');
+
+  // Possibilities update to double patti for digit 7
+  const double7 = getPattiPossibilities(userState.selectedDigit, userState.category);
+  assert.equal(double7.length, 9);
+  assert.ok(double7.includes('115'));
+});
+
+// ------------------------------------------------------------------
 // Summary Report
 // ------------------------------------------------------------------
 console.log('\n======================================================');

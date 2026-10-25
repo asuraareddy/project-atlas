@@ -7,8 +7,10 @@ import {
   AlertCircle, ChevronRight, CheckCircle2, RefreshCw, X, PlayCircle 
 } from 'lucide-react';
 import { MarketSummary, ChartRecord } from '@/domain/games/adapters/types';
+import PattiParticipationSection from '@/components/matka/PattiParticipationSection';
 
 export default function MatkaPage() {
+  const [activeTab, setActiveTab] = useState<'participation' | 'markets'>('participation');
   const [markets, setMarkets] = useState<MarketSummary[]>([]);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'declared' | 'pending'>('all');
   const [search, setSearch] = useState('');
@@ -142,67 +144,112 @@ export default function MatkaPage() {
         </div>
       </div>
 
-      {/* Controls & Search */}
-      <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-4">
-        {/* Search */}
-        <div className="relative w-full lg:w-80">
-          <Search className="w-4 h-4 text-[#c4bfd0] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search market by name or API ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#1f1f1f] text-sm text-white rounded-lg border border-white/10 focus:border-[#b45df0] focus:outline-none"
-          />
-        </div>
+      {/* Primary View Switcher: Patti Participation vs Live Draw Markets */}
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+        <button
+          onClick={() => setActiveTab('participation')}
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all ${
+            activeTab === 'participation'
+              ? 'bg-[#7e0ac2] text-white shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-2 ring-[#b45df0]'
+              : 'bg-[#242424] text-[#c4bfd0] hover:text-white border border-white/10'
+          }`}
+        >
+          <Dice5 className="w-4 h-4 text-[#b45df0]" />
+          <span>Patti Participation (Single, Double & Triple)</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
+            New
+          </span>
+        </button>
 
-        {/* Status Filters */}
-        <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'all'
-                ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
-                : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-            }`}
-          >
-            All Markets ({markets.length})
-          </button>
-          <button
-            onClick={() => setFilter('declared')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'declared'
-                ? 'bg-[#10b981] text-white shadow-md shadow-[#10b981]/40'
-                : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-            }`}
-          >
-            Declared ({markets.filter(m => m.latestResult?.resultState === 'declared').length})
-          </button>
-          <button
-            onClick={() => setFilter('pending')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'pending'
-                ? 'bg-[#f59e0b] text-black shadow-md shadow-[#f59e0b]/40 font-bold'
-                : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-            }`}
-          >
-            Pending Result ({markets.filter(m => m.latestResult?.resultState === 'pending').length})
-          </button>
-          <button
-            onClick={() => setFilter('open')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'open'
-                ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/40'
-                : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-            }`}
-          >
-            Open for Play
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab('markets')}
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all ${
+            activeTab === 'markets'
+              ? 'bg-[#7e0ac2] text-white shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-2 ring-[#b45df0]'
+              : 'bg-[#242424] text-[#c4bfd0] hover:text-white border border-white/10'
+          }`}
+        >
+          <BarChart2 className="w-4 h-4 text-[#b45df0]" />
+          <span>Live Draw Markets & Panels</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#10b981]/20 text-[#10b981] font-mono font-bold">
+            {markets.length}
+          </span>
+        </button>
       </div>
 
-      {/* Markets Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* View 1: Patti Participation Console */}
+      {activeTab === 'participation' && (
+        <PattiParticipationSection
+          markets={markets}
+          preselectedMarketId={selectedMarketForPlay?.id}
+          onMarketChange={(m) => setSelectedMarketForPlay(m)}
+        />
+      )}
+
+      {/* View 2: Live Draw Markets & Panels Grid */}
+      {activeTab === 'markets' && (
+        <>
+          {/* Controls & Search */}
+          <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-4">
+            {/* Search */}
+            <div className="relative w-full lg:w-80">
+              <Search className="w-4 h-4 text-[#c4bfd0] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search market by name or API ID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[#1f1f1f] text-sm text-white rounded-lg border border-white/10 focus:border-[#b45df0] focus:outline-none"
+              />
+            </div>
+
+            {/* Status Filters */}
+            <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  filter === 'all'
+                    ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+                }`}
+              >
+                All Markets ({markets.length})
+              </button>
+              <button
+                onClick={() => setFilter('declared')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  filter === 'declared'
+                    ? 'bg-[#10b981] text-white shadow-md shadow-[#10b981]/40'
+                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+                }`}
+              >
+                Declared ({markets.filter(m => m.latestResult?.resultState === 'declared').length})
+              </button>
+              <button
+                onClick={() => setFilter('pending')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  filter === 'pending'
+                    ? 'bg-[#f59e0b] text-black shadow-md shadow-[#f59e0b]/40 font-bold'
+                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+                }`}
+              >
+                Pending Result ({markets.filter(m => m.latestResult?.resultState === 'pending').length})
+              </button>
+              <button
+                onClick={() => setFilter('open')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  filter === 'open'
+                    ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/40'
+                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+                }`}
+              >
+                Open for Play
+              </button>
+            </div>
+          </div>
+
+          {/* Markets Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMarkets.map((market) => (
           <div
             key={market.id}
@@ -310,7 +357,11 @@ export default function MatkaPage() {
 
               <button
                 disabled={market.status !== 'open'}
-                onClick={() => setSelectedMarketForPlay(market)}
+                onClick={() => {
+                  setSelectedMarketForPlay(market);
+                  setActiveTab('participation');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className={`flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   market.status === 'open'
                     ? 'bg-[#7e0ac2] hover:bg-[#9a13e6] text-white shadow-md shadow-[#7e0ac2]/40'
@@ -324,6 +375,8 @@ export default function MatkaPage() {
           </div>
         ))}
       </div>
+        </>
+      )}
 
       {/* Panel Chart Modal */}
       {selectedMarketForChart && (
@@ -375,98 +428,6 @@ export default function MatkaPage() {
             <div className="text-[11px] text-[#c4bfd0] bg-[#1f1f1f] p-3 rounded-lg border border-white/5">
               Verified historical panel chart synchronized with client provider result feeds.
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Participation Modal */}
-      {selectedMarketForPlay && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#242424] border border-white/15 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-white">Place Participation</h3>
-                <p className="text-xs text-[#b45df0] font-semibold">{selectedMarketForPlay.name}</p>
-              </div>
-              <button
-                onClick={() => setSelectedMarketForPlay(null)}
-                className="w-8 h-8 rounded-full bg-[#1f1f1f] text-white flex items-center justify-center hover:bg-white/20"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handlePlaySubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-[#c4bfd0] block mb-1">Entry Option</label>
-                <select
-                  value={entryType}
-                  onChange={(e) => setEntryType(e.target.value as any)}
-                  className="w-full bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-[#b45df0] focus:outline-none"
-                >
-                  <option value="single_digit">Single Digit (0-9) [1:9]</option>
-                  <option value="jodi_digit">Jodi Digit (00-99) [1:90]</option>
-                  <option value="single_pana">Single Pana (e.g. 124) [1:140]</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#c4bfd0] block mb-1">
-                  Selected Number ({entryType === 'single_digit' ? '1 Digit' : entryType === 'jodi_digit' ? '2 Digits' : '3 Digits'})
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={entryType === 'single_digit' ? '5' : entryType === 'jodi_digit' ? '28' : '246'}
-                  value={selectedDigit}
-                  onChange={(e) => setSelectedDigit(e.target.value)}
-                  className="w-full bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white font-mono focus:border-[#b45df0] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-[#c4bfd0] block mb-1">Stake Amount (GBP £)</label>
-                <input
-                  type="number"
-                  step="0.50"
-                  min="0.50"
-                  max="500.00"
-                  required
-                  value={stakeAmount}
-                  onChange={(e) => setStakeAmount(e.target.value)}
-                  className="w-full bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white font-mono focus:border-[#b45df0] focus:outline-none"
-                />
-                <span className="text-[11px] text-[#9c9aa8] mt-1 block">
-                  Deducted atomically from Cash balance upon server validation.
-                </span>
-              </div>
-
-              {participationStatus && (
-                <div className={`p-3 rounded-lg text-xs font-semibold ${
-                  participationStatus.startsWith('Accepted')
-                    ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40'
-                    : 'bg-[#ff5a7a]/20 text-[#ff5a7a] border border-[#ff5a7a]/40'
-                }`}>
-                  {participationStatus}
-                </div>
-              )}
-
-              <div className="pt-2 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedMarketForPlay(null)}
-                  className="px-4 py-2 rounded-full text-xs font-semibold text-[#c4bfd0] hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-full text-xs font-semibold text-white bg-[#7e0ac2] hover:bg-[#9a13e6] shadow-md shadow-[#7e0ac2]/40"
-                >
-                  Confirm & Submit
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
