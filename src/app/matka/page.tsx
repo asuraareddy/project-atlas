@@ -10,17 +10,12 @@ import { MarketSummary, ChartRecord } from '@/domain/games/adapters/types';
 import PattiParticipationSection from '@/components/matka/PattiParticipationSection';
 
 export default function MatkaPage() {
-  const [activeTab, setActiveTab] = useState<'participation' | 'markets'>('participation');
   const [markets, setMarkets] = useState<MarketSummary[]>([]);
   const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'declared' | 'pending'>('all');
   const [search, setSearch] = useState('');
   const [selectedMarketForChart, setSelectedMarketForChart] = useState<MarketSummary | null>(null);
   const [chartData, setChartData] = useState<ChartRecord[]>([]);
   const [selectedMarketForPlay, setSelectedMarketForPlay] = useState<MarketSummary | null>(null);
-  const [entryType, setEntryType] = useState<'single_digit' | 'jodi_digit' | 'single_pana'>('single_digit');
-  const [selectedDigit, setSelectedDigit] = useState('');
-  const [stakeAmount, setStakeAmount] = useState('1.00');
-  const [participationStatus, setParticipationStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
 
@@ -57,43 +52,6 @@ export default function MatkaPage() {
       }
     } catch (err) {
       console.error('Failed to load chart:', err);
-    }
-  };
-
-  const handlePlaySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedMarketForPlay) return;
-
-    try {
-      setParticipationStatus('Submitting to server...');
-      const stakeMinor = Math.round(parseFloat(stakeAmount) * 100);
-
-      const res = await fetch('/api/v1/games/matka/participate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          marketId: selectedMarketForPlay.id,
-          entryType,
-          selectedValues: selectedDigit,
-          stakeMinor,
-          currency: 'GBP',
-          idempotencyKey: `idem_mat_${Date.now()}`
-        })
-      });
-
-      const json = await res.json();
-      if (res.ok) {
-        setParticipationStatus(`Accepted! Ref: ${json.data.receipt.providerReference}`);
-        setTimeout(() => {
-          setSelectedMarketForPlay(null);
-          setParticipationStatus(null);
-          setSelectedDigit('');
-        }, 2500);
-      } else {
-        setParticipationStatus(`Error: ${json.error?.message || 'Submission rejected by server'}`);
-      }
-    } catch (err: any) {
-      setParticipationStatus(`Network Error: ${err.message}`);
     }
   };
 
@@ -144,112 +102,69 @@ export default function MatkaPage() {
         </div>
       </div>
 
-      {/* Primary View Switcher: Patti Participation vs Live Draw Markets */}
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-        <button
-          onClick={() => setActiveTab('participation')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all ${
-            activeTab === 'participation'
-              ? 'bg-[#7e0ac2] text-white shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-2 ring-[#b45df0]'
-              : 'bg-[#242424] text-[#c4bfd0] hover:text-white border border-white/10'
-          }`}
-        >
-          <Dice5 className="w-4 h-4 text-[#b45df0]" />
-          <span>Patti Participation (Single, Double & Triple)</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
-            New
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('markets')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all ${
-            activeTab === 'markets'
-              ? 'bg-[#7e0ac2] text-white shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-2 ring-[#b45df0]'
-              : 'bg-[#242424] text-[#c4bfd0] hover:text-white border border-white/10'
-          }`}
-        >
-          <BarChart2 className="w-4 h-4 text-[#b45df0]" />
-          <span>Live Draw Markets & Panels</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#10b981]/20 text-[#10b981] font-mono font-bold">
-            {markets.length}
-          </span>
-        </button>
-      </div>
-
-      {/* View 1: Patti Participation Console */}
-      {activeTab === 'participation' && (
-        <PattiParticipationSection
-          markets={markets}
-          preselectedMarketId={selectedMarketForPlay?.id}
-          onMarketChange={(m) => setSelectedMarketForPlay(m)}
-        />
-      )}
-
-      {/* View 2: Live Draw Markets & Panels Grid */}
-      {activeTab === 'markets' && (
-        <>
-          {/* Controls & Search */}
-          <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-4">
-            {/* Search */}
-            <div className="relative w-full lg:w-80">
-              <Search className="w-4 h-4 text-[#c4bfd0] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search market by name or API ID..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#1f1f1f] text-sm text-white rounded-lg border border-white/10 focus:border-[#b45df0] focus:outline-none"
-              />
-            </div>
-
-            {/* Status Filters */}
-            <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  filter === 'all'
-                    ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
-                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-                }`}
-              >
-                All Markets ({markets.length})
-              </button>
-              <button
-                onClick={() => setFilter('declared')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  filter === 'declared'
-                    ? 'bg-[#10b981] text-white shadow-md shadow-[#10b981]/40'
-                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-                }`}
-              >
-                Declared ({markets.filter(m => m.latestResult?.resultState === 'declared').length})
-              </button>
-              <button
-                onClick={() => setFilter('pending')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  filter === 'pending'
-                    ? 'bg-[#f59e0b] text-black shadow-md shadow-[#f59e0b]/40 font-bold'
-                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-                }`}
-              >
-                Pending Result ({markets.filter(m => m.latestResult?.resultState === 'pending').length})
-              </button>
-              <button
-                onClick={() => setFilter('open')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  filter === 'open'
-                    ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/40'
-                    : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
-                }`}
-              >
-                Open for Play
-              </button>
-            </div>
+      {/* Section 1: Live Draw Markets & Panels */}
+      <section className="space-y-4">
+        {/* Controls & Search */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-[#242424] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-3">
+          {/* Search */}
+          <div className="relative w-full lg:w-80">
+            <Search className="w-4 h-4 text-[#c4bfd0] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search market or API ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-[#1f1f1f] text-xs sm:text-sm text-white rounded-xl border border-white/10 focus:border-[#b45df0] focus:outline-none"
+            />
           </div>
 
-          {/* Markets Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Status Filters - Mobile scrollable / flex */}
+          <div className="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
+                filter === 'all'
+                  ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                  : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+              }`}
+            >
+              All ({markets.length})
+            </button>
+            <button
+              onClick={() => setFilter('declared')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
+                filter === 'declared'
+                  ? 'bg-[#10b981] text-white shadow-md shadow-[#10b981]/40'
+                  : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+              }`}
+            >
+              Declared ({markets.filter(m => m.latestResult?.resultState === 'declared').length})
+            </button>
+            <button
+              onClick={() => setFilter('pending')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
+                filter === 'pending'
+                  ? 'bg-[#f59e0b] text-black shadow-md shadow-[#f59e0b]/40'
+                  : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+              }`}
+            >
+              Pending ({markets.filter(m => m.latestResult?.resultState === 'pending').length})
+            </button>
+            <button
+              onClick={() => setFilter('open')}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex-shrink-0 ${
+                filter === 'open'
+                  ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/40'
+                  : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+              }`}
+            >
+              Open for Play
+            </button>
+          </div>
+        </div>
+
+        {/* Markets Cards Grid - Mobile First */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 max-h-[380px] overflow-y-auto pr-1">
         {filteredMarkets.map((market) => (
           <div
             key={market.id}
@@ -359,8 +274,8 @@ export default function MatkaPage() {
                 disabled={market.status !== 'open'}
                 onClick={() => {
                   setSelectedMarketForPlay(market);
-                  setActiveTab('participation');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  const el = document.getElementById('patti-console');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className={`flex-1 py-2 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   market.status === 'open'
@@ -369,14 +284,20 @@ export default function MatkaPage() {
                 }`}
               >
                 <PlayCircle className="w-3.5 h-3.5" />
-                <span>Participate</span>
+                <span>Play Patti</span>
               </button>
             </div>
           </div>
         ))}
-      </div>
-        </>
-      )}
+        </div>
+      </section>
+
+      {/* Section 2: Patti Selection Console Directly Under Markets & Panels */}
+      <PattiParticipationSection
+        markets={markets}
+        preselectedMarketId={selectedMarketForPlay?.id}
+        onMarketChange={(m) => setSelectedMarketForPlay(m)}
+      />
 
       {/* Panel Chart Modal */}
       {selectedMarketForChart && (

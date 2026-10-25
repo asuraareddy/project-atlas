@@ -14,13 +14,13 @@ import {
   RefreshCw,
   Send,
   Sparkles,
-  Info
+  Info,
+  ChevronDown
 } from 'lucide-react';
 import { MarketSummary } from '@/domain/games/adapters/types';
 import {
   getPattiPossibilities,
   PattiCategory,
-  MATKA_DIGIT_ORDER,
   validatePoints
 } from '@/domain/games/matka/patti-generator';
 
@@ -53,7 +53,7 @@ export default function PattiParticipationSection({
   );
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [gameType, setGameType] = useState<'OPEN' | 'CLOSE'>('OPEN');
-  const [selectedDigit, setSelectedDigit] = useState<number>(3); // Default 3 as referenced in prompt
+  const [selectedDigit, setSelectedDigit] = useState<number>(3); // Default 3
   const [category, setCategory] = useState<PattiCategory>('single');
   const [pointsInput, setPointsInput] = useState<number>(5);
 
@@ -207,7 +207,6 @@ export default function PattiParticipationSection({
       setIsSubmitting(true);
       setErrorMessage(null);
 
-      // Server payload
       const payload = {
         marketId: selectedMarketId,
         date: selectedDate,
@@ -247,29 +246,23 @@ export default function PattiParticipationSection({
   };
 
   return (
-    <div className="bg-[#1f1f1f] border border-white/10 rounded-2xl p-4 sm:p-6 lg:p-8 space-y-6 shadow-2xl">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-4">
+    <section id="patti-console" className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 lg:p-6 space-y-4 shadow-2xl">
+      {/* Header Banner - Mobile Compact */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/10 gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#b45df0] uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#b45df0] uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Official Satta Matka Participation Console</span>
-          </div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-3">
-            <Dice5 className="w-7 h-7 text-[#b45df0]" />
             <span>Patti Selection (Single, Double & Triple)</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
+            <Dice5 className="w-6 h-6 text-[#b45df0]" />
+            <span>Patti Play Console</span>
           </h2>
-          <p className="text-xs text-[#c4bfd0] mt-1">
-            Select any digit to generate all 220 authoritative Patti combinations with real-time slip calculations.
-          </p>
         </div>
 
-        {/* Market Selector & Cutoff Pill */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex flex-col">
-            <label className="text-[10px] font-bold text-[#c4bfd0] uppercase tracking-wider mb-1">
-              Select Market
-            </label>
+        {/* Market Selector Dropdown - Mobile Optimized */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
             <select
               value={selectedMarketId}
               onChange={(e) => {
@@ -277,7 +270,7 @@ export default function PattiParticipationSection({
                 const found = markets.find((m) => m.id === e.target.value);
                 if (found && onMarketChange) onMarketChange(found);
               }}
-              className="bg-[#242424] border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-[#b45df0] focus:outline-none"
+              className="w-full bg-[#242424] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:border-[#b45df0] focus:outline-none appearance-none pr-8 truncate"
             >
               {markets.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -285,28 +278,28 @@ export default function PattiParticipationSection({
                 </option>
               ))}
             </select>
+            <ChevronDown className="w-4 h-4 text-[#c4bfd0] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {activeMarket && (
-            <div className="text-[11px] bg-[#242424] border border-white/10 px-3 py-2 rounded-xl text-[#c4bfd0] mt-auto">
-              Status:{' '}
-              <span
-                className={`font-bold uppercase ${
-                  activeMarket.status === 'open' ? 'text-[#10b981]' : 'text-[#ff5a7a]'
-                }`}
-              >
-                {activeMarket.status}
-              </span>
-            </div>
+            <span
+              className={`text-[10px] font-black px-2.5 py-2 rounded-xl uppercase tracking-wider flex-shrink-0 ${
+                activeMarket.status === 'open'
+                  ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/40'
+                  : 'bg-[#ff5a7a]/15 text-[#ff5a7a] border border-[#ff5a7a]/40'
+              }`}
+            >
+              {activeMarket.status}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Control Panel: Date, Game Type, Digit Selection, Points */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl bg-[#242424] border border-white/10">
+      {/* Mobile-First Controls: Date, Game Type, Points */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3 sm:p-4 rounded-xl bg-[#242424] border border-white/10">
         {/* Date Selector */}
         <div>
-          <label className="text-xs font-semibold text-[#c4bfd0] flex items-center gap-1.5 mb-2">
+          <label className="text-[11px] font-bold text-[#c4bfd0] flex items-center gap-1.5 mb-1.5 uppercase tracking-wider">
             <Calendar className="w-3.5 h-3.5 text-[#b45df0]" />
             <span>Date</span>
           </label>
@@ -314,23 +307,23 @@ export default function PattiParticipationSection({
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full bg-[#1f1f1f] border border-white/15 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:border-[#b45df0] focus:outline-none"
+            className="w-full h-11 bg-[#1a1a1a] border border-white/15 rounded-xl px-3 text-xs font-semibold text-white focus:border-[#b45df0] focus:outline-none"
           />
         </div>
 
         {/* Game Type Selector: OPEN vs CLOSE */}
         <div>
-          <label className="text-xs font-semibold text-[#c4bfd0] flex items-center gap-1.5 mb-2">
+          <label className="text-[11px] font-bold text-[#c4bfd0] flex items-center gap-1.5 mb-1.5 uppercase tracking-wider">
             <Layers className="w-3.5 h-3.5 text-[#b45df0]" />
             <span>Game Type</span>
           </label>
-          <div className="grid grid-cols-2 gap-2 bg-[#1f1f1f] p-1 rounded-xl border border-white/10">
+          <div className="grid grid-cols-2 gap-2 h-11 bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
             <button
               type="button"
               onClick={() => setGameType('OPEN')}
-              className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`h-full rounded-lg text-xs font-black transition-all flex items-center justify-center ${
                 gameType === 'OPEN'
-                  ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                  ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/50 ring-1 ring-[#b45df0]'
                   : 'text-[#c4bfd0] hover:text-white'
               }`}
             >
@@ -339,9 +332,9 @@ export default function PattiParticipationSection({
             <button
               type="button"
               onClick={() => setGameType('CLOSE')}
-              className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`h-full rounded-lg text-xs font-black transition-all flex items-center justify-center ${
                 gameType === 'CLOSE'
-                  ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                  ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/50 ring-1 ring-[#b45df0]'
                   : 'text-[#c4bfd0] hover:text-white'
               }`}
             >
@@ -350,50 +343,52 @@ export default function PattiParticipationSection({
           </div>
         </div>
 
-        {/* Points Amount Input (Separated from Selected Digit) */}
-        <div className="lg:col-span-2">
-          <label className="text-xs font-semibold text-[#c4bfd0] flex items-center justify-between mb-2">
-            <span>Points per Patti (Whole Number 1–10+)</span>
-            <span className="text-[10px] text-[#b45df0]">1 Point = £1.00</span>
+        {/* Points Amount Stepper & Presets */}
+        <div className="sm:col-span-2 lg:col-span-1">
+          <label className="text-[11px] font-bold text-[#c4bfd0] flex items-center justify-between mb-1.5 uppercase tracking-wider">
+            <span>Points per Patti</span>
+            <span className="text-[10px] text-[#b45df0] font-mono lowercase">1 pt = £1.00</span>
           </label>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handlePointsChange(Math.max(1, pointsInput - 1))}
-              className="w-9 h-9 rounded-xl bg-[#1f1f1f] border border-white/15 text-white flex items-center justify-center hover:bg-white/10 transition-colors"
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center bg-[#1a1a1a] border border-white/15 rounded-xl overflow-hidden h-11 flex-1">
+              <button
+                type="button"
+                onClick={() => handlePointsChange(Math.max(1, pointsInput - 1))}
+                className="w-11 h-full flex items-center justify-center text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                aria-label="Decrease points"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                value={pointsInput}
+                onChange={(e) => handlePointsChange(parseInt(e.target.value, 10) || 1)}
+                className="flex-1 text-center bg-transparent text-sm font-black text-white font-mono focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handlePointsChange(pointsInput + 1)}
+                className="w-11 h-full flex items-center justify-center text-white hover:bg-white/10 active:bg-white/20 transition-colors"
+                aria-label="Increase points"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
 
-            <input
-              type="number"
-              min={1}
-              max={100}
-              step={1}
-              value={pointsInput}
-              onChange={(e) => handlePointsChange(parseInt(e.target.value, 10) || 1)}
-              className="flex-1 bg-[#1f1f1f] border border-white/15 rounded-xl px-3 py-2 text-center text-sm font-bold text-white font-mono focus:border-[#b45df0] focus:outline-none"
-            />
-
-            <button
-              type="button"
-              onClick={() => handlePointsChange(pointsInput + 1)}
-              className="w-9 h-9 rounded-xl bg-[#1f1f1f] border border-white/15 text-white flex items-center justify-center hover:bg-white/10 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Quick Presets: 1, 2, 5, 10 */}
-            <div className="hidden sm:flex items-center gap-1.5">
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1">
               {[1, 2, 5, 10].map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => handlePointsChange(preset)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-colors ${
+                  className={`h-11 px-2.5 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 ${
                     pointsInput === preset
-                      ? 'bg-[#7e0ac2] text-white'
-                      : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+                      ? 'bg-[#7e0ac2] text-white shadow-md'
+                      : 'bg-[#1a1a1a] text-[#c4bfd0] hover:text-white border border-white/10'
                   }`}
                 >
                   {preset}p
@@ -402,26 +397,25 @@ export default function PattiParticipationSection({
             </div>
           </div>
           {validationError && (
-            <p className="text-[11px] text-[#ff5a7a] mt-1">{validationError}</p>
+            <p className="text-[10px] text-[#ff5a7a] mt-1 font-medium">{validationError}</p>
           )}
         </div>
       </div>
 
-      {/* 10 Selectable Digit Buttons: 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 */}
+      {/* 10 Selectable Digit Keypad: Clean Numeric Buttons (No "Sum =X" clutter) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-white tracking-wide uppercase flex items-center gap-2">
+          <label className="text-xs font-black text-white tracking-wide uppercase flex items-center gap-2">
             <span>Select Single Digit:</span>
-            <span className="text-[#b45df0] font-mono text-sm">
-              [{selectedDigit}]
+            <span className="px-2 py-0.5 rounded-md bg-[#7e0ac2] text-white font-mono text-sm font-bold shadow-sm">
+              {selectedDigit}
             </span>
           </label>
-          <span className="text-[11px] text-[#c4bfd0]">
-            Click any digit to view all corresponding Patti sums
-          </span>
+          <span className="text-[11px] text-[#c4bfd0]/80">Tap digit to update possibilities</span>
         </div>
 
-        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+        {/* Mobile Keypad: 5 columns on mobile (2 clean rows), 10 columns on tablet/desktop */}
+        <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2">
           {DIGIT_BUTTONS.map((digit) => {
             const isSelected = selectedDigit === digit;
             return (
@@ -429,208 +423,177 @@ export default function PattiParticipationSection({
                 key={digit}
                 type="button"
                 onClick={() => setSelectedDigit(digit)}
-                className={`h-12 rounded-xl font-mono text-base font-black transition-all flex flex-col items-center justify-center relative ${
+                className={`h-12 sm:h-14 rounded-xl font-mono text-lg sm:text-xl font-black transition-all flex items-center justify-center active:scale-95 select-none ${
                   isSelected
-                    ? 'bg-[#7e0ac2] text-white ring-2 ring-[#b45df0] ring-offset-2 ring-offset-[#1f1f1f] shadow-lg shadow-[#7e0ac2]/50 scale-105'
-                    : 'bg-[#242424] text-[#c4bfd0] hover:text-white hover:bg-white/10 border border-white/10'
+                    ? 'bg-[#7e0ac2] text-white ring-2 ring-[#b45df0] shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-offset-1 ring-offset-[#1a1a1a]'
+                    : 'bg-[#242424] text-white/90 hover:text-white hover:bg-white/10 border border-white/10'
                 }`}
               >
-                <span>{digit}</span>
-                <span className="text-[9px] opacity-75 font-sans font-medium">
-                  Sum ={digit}
-                </span>
+                {digit}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Patti Category Tabs: Single Patti, Double Patti, Triple Patti */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2 p-1 bg-[#242424] rounded-xl border border-white/10">
-            <button
-              type="button"
-              onClick={() => setCategory('single')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                category === 'single'
-                  ? 'bg-[#7e0ac2] text-white shadow-md'
-                  : 'text-[#c4bfd0] hover:text-white'
-              }`}
-            >
-              <span>Single Patti</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
-                12
-              </span>
-            </button>
+      {/* Patti Category Tabs: Mobile Segmented Bar */}
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#242424] rounded-xl border border-white/10">
+          <button
+            type="button"
+            onClick={() => setCategory('single')}
+            className={`py-2 px-1 rounded-lg text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 text-center ${
+              category === 'single'
+                ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                : 'text-[#c4bfd0] hover:text-white'
+            }`}
+          >
+            <span>Single Patti</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono">
+              12
+            </span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setCategory('double')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                category === 'double'
-                  ? 'bg-[#7e0ac2] text-white shadow-md'
-                  : 'text-[#c4bfd0] hover:text-white'
-              }`}
-            >
-              <span>Double Patti</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
-                9
-              </span>
-            </button>
+          <button
+            type="button"
+            onClick={() => setCategory('double')}
+            className={`py-2 px-1 rounded-lg text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 text-center ${
+              category === 'double'
+                ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                : 'text-[#c4bfd0] hover:text-white'
+            }`}
+          >
+            <span>Double Patti</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono">
+              9
+            </span>
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setCategory('triple')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-                category === 'triple'
-                  ? 'bg-[#7e0ac2] text-white shadow-md'
-                  : 'text-[#c4bfd0] hover:text-white'
-              }`}
-            >
-              <span>Triple Patti</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
-                1
-              </span>
-            </button>
+          <button
+            type="button"
+            onClick={() => setCategory('triple')}
+            className={`py-2 px-1 rounded-lg text-xs font-black transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 text-center ${
+              category === 'triple'
+                ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
+                : 'text-[#c4bfd0] hover:text-white'
+            }`}
+          >
+            <span>Triple Patti</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-mono">
+              1
+            </span>
+          </button>
+        </div>
+
+        {/* Quick Bulk Actions */}
+        <div className="flex items-center justify-between text-xs">
+          <div className="text-[11px] text-[#c4bfd0]">
+            Digit <span className="font-bold text-white">[{selectedDigit}]</span> • {category === 'single' ? 'Single' : category === 'double' ? 'Double' : 'Triple'} Patti ({currentPossibilities.length} matching)
           </div>
-
-          {/* Quick Select / Deselect actions */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleSelectAll}
-              className="px-3 py-1.5 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-semibold text-white hover:border-[#b45df0] transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-white hover:border-[#b45df0] transition-colors"
             >
-              Select All ({currentPossibilities.length})
+              Select All
             </button>
             <button
               type="button"
               onClick={handleDeselectAll}
-              className="px-3 py-1.5 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-semibold text-[#c4bfd0] hover:text-white transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-[#c4bfd0] hover:text-white transition-colors"
             >
               Deselect All
             </button>
           </div>
         </div>
-
-        {/* Category Description Banner */}
-        <div className="flex items-center gap-2 text-xs text-[#c4bfd0] bg-[#242424]/60 p-3 rounded-xl border border-white/5">
-          <Info className="w-4 h-4 text-[#b45df0] flex-shrink-0" />
-          <span>
-            {category === 'single' &&
-              `Single Patti: All 3-digit combinations with three distinct digits whose sum modulo 10 equals ${selectedDigit}. (e.g. 120, 139 for digit 3)`}
-            {category === 'double' &&
-              `Double Patti: All 3-digit combinations with exactly two identical digits whose sum modulo 10 equals ${selectedDigit}. (e.g. 166, 300 for digit 3)`}
-            {category === 'triple' &&
-              `Triple Patti: All 3-digit combinations with three identical digits whose sum modulo 10 equals ${selectedDigit}. (e.g. 111 for digit 3)`}
-          </span>
-        </div>
       </div>
 
-      {/* Main Content Grid: Possibilities Table & Selected Slip */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Participation Possibilities Table (Follows Screenshot Spec) */}
+      {/* Main Content: Mobile-First Compact Cards Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
+        {/* Left Column: Possibilities Compact Cards (Replaced wide table) */}
         <div className="lg:col-span-7 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white tracking-wide uppercase">
-              Matching Possibilities ({currentPossibilities.length})
+            <h3 className="text-xs font-black text-white tracking-wide uppercase">
+              Patti Possibilities ({currentPossibilities.length})
             </h3>
             <span className="text-[11px] text-[#c4bfd0]">
               Market: <span className="text-white font-semibold">{activeMarket?.name}</span>
             </span>
           </div>
 
-          <div className="border border-white/10 rounded-xl overflow-hidden bg-[#242424]">
-            <div className="max-h-[360px] overflow-y-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 z-10 bg-[#1a1a1a] text-[#c4bfd0] border-b border-white/10">
-                  <tr>
-                    <th className="p-3 font-semibold">Patti Number</th>
-                    <th className="p-3 font-semibold text-center">Points</th>
-                    <th className="p-3 font-semibold text-center">Game Type</th>
-                    <th className="p-3 font-semibold text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 font-mono">
-                  {currentPossibilities.map((patti) => {
-                    const isSelected = isPattiSelected(patti);
-                    return (
-                      <tr
-                        key={patti}
-                        className={`transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#7e0ac2]/20 hover:bg-[#7e0ac2]/30'
-                            : 'hover:bg-white/5'
-                        }`}
-                        onClick={() => togglePattiSelection(patti)}
-                      >
-                        {/* Patti Number (Preserves leading zeros and 3-char format) */}
-                        <td className="p-3 font-bold text-white text-sm">
-                          <span className="px-2.5 py-1 rounded-md bg-[#1f1f1f] border border-white/10">
-                            {patti}
-                          </span>
-                        </td>
+          {/* Compact Card Grid - Thumb-Friendly and Mobile-First */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+            {currentPossibilities.map((patti) => {
+              const isSelected = isPattiSelected(patti);
+              return (
+                <div
+                  key={patti}
+                  onClick={() => togglePattiSelection(patti)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between active:scale-95 select-none ${
+                    isSelected
+                      ? 'bg-[#7e0ac2]/25 border-[#b45df0] shadow-md shadow-[#7e0ac2]/30 ring-1 ring-[#b45df0]'
+                      : 'bg-[#242424] hover:bg-white/5 border-white/10'
+                  }`}
+                >
+                  {/* Top: Prominent Patti Number + Game Type Tag */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-xl font-black text-white tracking-wider">
+                      {patti}
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                        gameType === 'OPEN'
+                          ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40'
+                          : 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40'
+                      }`}
+                    >
+                      {gameType}
+                    </span>
+                  </div>
 
-                        {/* Points */}
-                        <td className="p-3 text-center text-[#b45df0] font-bold">
-                          {pointsInput} pts
-                        </td>
+                  {/* Middle: Points Amount */}
+                  <div className="flex items-center justify-between text-[11px] text-[#c4bfd0] mb-2.5">
+                    <span className="text-[10px] text-[#9c9aa8]">Stake</span>
+                    <span className="font-mono font-bold text-[#b45df0]">{pointsInput} pts</span>
+                  </div>
 
-                        {/* Game Type */}
-                        <td className="p-3 text-center font-sans">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              gameType === 'OPEN'
-                                ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40'
-                                : 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/40'
-                            }`}
-                          >
-                            {gameType}
-                          </span>
-                        </td>
-
-                        {/* Action: Select or Remove */}
-                        <td className="p-3 text-right font-sans">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              togglePattiSelection(patti);
-                            }}
-                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ml-auto ${
-                              isSelected
-                                ? 'bg-[#ff5a7a]/20 text-[#ff5a7a] border border-[#ff5a7a]/40 hover:bg-[#ff5a7a]/30'
-                                : 'bg-[#7e0ac2] text-white hover:bg-[#9a13e6] shadow-sm'
-                            }`}
-                          >
-                            {isSelected ? (
-                              <>
-                                <Check className="w-3 h-3 text-[#ff5a7a]" />
-                                <span>Remove</span>
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="w-3 h-3" />
-                                <span>Select</span>
-                              </>
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  {/* Bottom: Action Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePattiSelection(patti);
+                    }}
+                    className={`w-full py-2 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm ${
+                      isSelected
+                        ? 'bg-[#ff5a7a] hover:bg-[#ff3b61] text-white'
+                        : 'bg-[#7e0ac2] hover:bg-[#9a13e6] text-white shadow-[#7e0ac2]/30'
+                    }`}
+                  >
+                    {isSelected ? (
+                      <>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Select</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right: Selected Participation Slip & Totals */}
-        <div className="lg:col-span-5 flex flex-col justify-between space-y-4 bg-[#242424] border border-white/10 rounded-xl p-4">
+        {/* Right Column: Selected Participation Slip (Mobile Vertical Cards) */}
+        <div className="lg:col-span-5 flex flex-col justify-between space-y-3 bg-[#242424] border border-white/10 rounded-xl p-3.5 sm:p-4">
           <div className="space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+              <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <span>Participation Slip</span>
                 <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-[#7e0ac2] text-white">
                   {totalEntriesCount}
@@ -640,7 +603,7 @@ export default function PattiParticipationSection({
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="text-[11px] text-[#ff5a7a] hover:underline flex items-center gap-1 font-medium"
+                  className="text-[11px] text-[#ff5a7a] hover:underline flex items-center gap-1 font-bold"
                 >
                   <Trash2 className="w-3 h-3" />
                   <span>Clear All</span>
@@ -648,55 +611,57 @@ export default function PattiParticipationSection({
               )}
             </div>
 
-            {/* Slip Entries List */}
+            {/* Slip Entries List: Vertical Compact Cards */}
             {selectedEntries.length === 0 ? (
-              <div className="py-12 text-center text-xs text-[#c4bfd0] space-y-2">
-                <Dice5 className="w-8 h-8 text-[#c4bfd0]/40 mx-auto" />
-                <p>No Patti combinations selected yet.</p>
+              <div className="py-8 text-center text-xs text-[#c4bfd0] space-y-1.5">
+                <Dice5 className="w-7 h-7 text-[#c4bfd0]/40 mx-auto" />
+                <p className="font-semibold text-white">No Patti numbers selected</p>
                 <p className="text-[11px] text-[#9c9aa8]">
-                  Select numbers from the table on the left to add them to your slip.
+                  Tap any card on the left to add it to your slip.
                 </p>
               </div>
             ) : (
-              <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-[260px] overflow-y-auto space-y-2 pr-1">
                 {selectedEntries.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-[#1f1f1f] border border-white/5 text-xs"
+                    className="p-2.5 rounded-xl bg-[#1a1a1a] border border-white/5 flex items-center justify-between gap-2 shadow-sm"
                   >
-                    <div className="flex items-center gap-2 font-mono">
-                      <span className="font-bold text-white text-sm px-2 py-0.5 bg-[#242424] rounded border border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono text-base font-black text-white px-2 py-0.5 bg-[#242424] rounded-lg border border-white/10">
                         {item.pattiNumber}
                       </span>
-                      <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-white/10 text-[#c4bfd0]">
-                        {item.gameType}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase text-[#10b981]">
+                          {item.gameType} DRAW
+                        </span>
+                        <span className="text-[11px] font-mono font-bold text-[#b45df0]">
+                          {item.points} pts (£{item.points}.00)
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-[#b45df0]">
-                        {item.points} pts
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveEntry(item.id)}
-                        className="text-[#c4bfd0] hover:text-[#ff5a7a] p-1 transition-colors"
-                        title="Remove entry"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Delete Action within Each Card for Easy Thumb Access */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEntry(item.id)}
+                      className="w-8 h-8 rounded-lg bg-[#ff5a7a]/15 hover:bg-[#ff5a7a]/25 text-[#ff5a7a] border border-[#ff5a7a]/30 flex items-center justify-center transition-colors active:scale-95 flex-shrink-0"
+                      title="Remove entry"
+                      aria-label="Remove entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Slip Summary & Checkout */}
-          <div className="space-y-3 pt-3 border-t border-white/10 mt-auto">
-            <div className="space-y-1.5 text-xs text-[#c4bfd0]">
+          {/* Slip Summary & Mobile-First Confirm Button */}
+          <div className="space-y-2.5 pt-2.5 border-t border-white/10 mt-auto">
+            <div className="space-y-1 text-xs text-[#c4bfd0]">
               <div className="flex justify-between">
-                <span>Total Selected Entries:</span>
+                <span>Selected Entries:</span>
                 <span className="font-mono font-bold text-white">{totalEntriesCount}</span>
               </div>
               <div className="flex justify-between">
@@ -711,7 +676,7 @@ export default function PattiParticipationSection({
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 rounded-lg bg-[#ff5a7a]/20 border border-[#ff5a7a]/40 text-xs text-[#ff5a7a] flex items-center gap-2">
+              <div className="p-2.5 rounded-lg bg-[#ff5a7a]/20 border border-[#ff5a7a]/40 text-xs text-[#ff5a7a] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -719,35 +684,32 @@ export default function PattiParticipationSection({
 
             {/* Success Receipt */}
             {submissionReceipt && (
-              <div className="p-3 rounded-lg bg-[#10b981]/20 border border-[#10b981]/40 text-xs text-[#10b981] space-y-1">
-                <div className="flex items-center gap-2 font-bold">
+              <div className="p-2.5 rounded-lg bg-[#10b981]/20 border border-[#10b981]/40 text-xs text-[#10b981] space-y-1">
+                <div className="flex items-center gap-1.5 font-bold">
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Participation Confirmed!</span>
                 </div>
                 <p className="text-[11px] font-mono">
                   Ref: {submissionReceipt.providerReference}
                 </p>
-                <p className="text-[10px] opacity-80">
-                  {submissionReceipt.entriesCount} entries verified and reserved via Double-Entry Ledger.
-                </p>
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Big Thumb Submit Button */}
             <button
               type="button"
               disabled={isSubmitting || totalEntriesCount === 0}
               onClick={handleSubmitParticipation}
-              className={`w-full py-3 rounded-xl font-bold text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-lg ${
+              className={`w-full h-12 rounded-xl font-black text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 shadow-lg active:scale-98 ${
                 totalEntriesCount === 0 || isSubmitting
                   ? 'bg-white/10 text-[#c4bfd0] cursor-not-allowed'
-                  : 'bg-[#7e0ac2] hover:bg-[#9a13e6] text-white shadow-[#7e0ac2]/40 active:scale-98'
+                  : 'bg-[#7e0ac2] hover:bg-[#9a13e6] text-white shadow-[#7e0ac2]/50'
               }`}
             >
               {isSubmitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Verifying & Submitting...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
@@ -759,6 +721,6 @@ export default function PattiParticipationSection({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
