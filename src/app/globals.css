@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  /* Bueno Dark Creator Theme Tokens */
+  --color-primary: #7e0ac2;
+  --color-primary-strong: #9a13e6;
+  --color-primary-soft: #b45df0;
+  --color-secondary: #ffffff;
+  --color-tertiary: #b8b8c2;
+  
+  --color-neutral: #242424;
+  --color-neutral-2: #2f2f2f;
+  --color-neutral-3: #374151;
+  
+  --color-surface: #1f1f1f;
+  --color-surface-2: #2a2a2a;
+  --color-surface-3: #333338;
+  
+  --color-on-surface: #ffffff;
+  --color-on-surface-muted: #c4bfd0;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-focus: rgba(180, 93, 240, 0.6);
+  --color-error: #ff5a7a;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  
+  --bg-radial-glow: radial-gradient(circle at 50% 0%, rgba(126, 10, 194, 0.28) 0%, rgba(31, 31, 31, 0) 70%);
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glass & Card Surfaces */
+.bg-glass {
+  background: rgba(36, 36, 36, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glow-aura {
+  background-image: var(--bg-radial-glow);
+}
+
+.border-subtle {
+  border-color: var(--color-border);
+}
+
+/* Interactive Pill & Card Utilities */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 20px rgba(126, 10, 194, 0.35);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-primary-strong);
+  box-shadow: 0 0 25px rgba(154, 19, 230, 0.55);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: #ffffff;
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.card-dark {
+  background-color: var(--color-neutral);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.card-dark:hover {
+  border-color: rgba(180, 93, 240, 0.45);
+}
+
+/* Custom Scrollbar for Dark Interface */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}

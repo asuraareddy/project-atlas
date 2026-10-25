@@ -1,0 +1,497 @@
+// Project Atlas — PostgreSQL Schema (09_DATA_MODEL.md & 21_CRYPTO_QR_DEPOSITS.md)
+// Multi-Gaming PWA with Double-Entry Ledger, RBAC & Direct Crypto QR Deposits
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// Organization & Tenancy
+// -------------------------------------------------------------
+
+model Organization {
+  id              String         @id @default(uuid())
+  name            String
+  status          String         @default("ACTIVE") // ACTIVE, SUSPENDED
+  defaultCurrency String         @default("GBP") @map("default_currency")
+  timezone        String         @default("Europe/London")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  branches        Branch[]
+  users           User[]
+  roles           Role[]
+  games           Game[]
+  gameProviders   GameProvider[]
+  ledgerAccounts  LedgerAccount[]
+  ledgerTxs       LedgerTransaction[]
+  auditEvents     AuditEvent[]
+
+  @@map("organizations")
+}
+
+model Branch {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  code           String       @unique
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  users          User[]
+
+  @@map("branches")
+}
+
+// -------------------------------------------------------------
+// Identity, RBAC & Profiles
+// -------------------------------------------------------------
+
+enum AccountType {
+  PLAYER
+  STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  EXCLUDED
+  LOCKED
+}
+
+model User {
+  id                   String        @id @default(uuid())
+  organizationId       String        @map("organization_id")
+  branchId             String?       @map("branch_id")
+  emailNormalized      String        @unique @map("email_normalized")
+  phoneNormalized      String?       @map("phone_normalized")
+  passwordHashOrIdpRef String        @map("password_hash_or_idp_ref")
+  accountType          AccountType   @default(PLAYER) @map("account_type")
+  status               UserStatus    @default(ACTIVE)
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  organization         Organization  @relation(fields: [organizationId], references: [id])
+  branch               Branch?       @relation(fields: [branchId], references: [id])
+  playerProfile        PlayerProfile?
+  staffProfile         StaffProfile?
+  roleAssignments      UserRoleAssignment[]
+  sessions             Session[]
+  wallets              Wallet[]
+  depositIntents       CryptoDepositIntent[]
+  withdrawalRequests   WithdrawalRequest[]
+  gameSessions         GameSession[]
+  gameParticipations   GameParticipation[]
+  restrictions         AccountRestriction[]
+  complianceCases      ComplianceCase[]
+
+  @@index([organizationId, branchId])
+  @@map("users")
+}
+
+model PlayerProfile {
+  userId             String   @id @map("user_id")
+  displayName        String   @map("display_name")
+  dateOfBirthRef     String?  @map("date_of_birth_ref")
+  kycStatus          String   @default("UNVERIFIED") @map("kyc_status") // UNVERIFIED, PENDING, VERIFIED, REJECTED
+  country            String   @default("GB")
+  contactPreferences Json?    @map("contact_preferences")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("player_profiles")
+}
+
+model StaffProfile {
+  userId      String    @id @map("user_id")
+  staffCode   String    @unique @map("staff_code")
+  department  String
+  activeFrom  DateTime  @default(now()) @map("active_from")
+  activeUntil DateTime? @map("active_until")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("staff_profiles")
+}
+
+model Role {
+  id             String               @id @default(uuid())
+  organizationId String?              @map("organization_id")
+  roleKey        String               @unique @map("role_key")
+  label          String
+  isSystemRole   Boolean              @default(true) @map("is_system_role")
+
+  organization   Organization?        @relation(fields: [organizationId], references: [id])
+  permissions    RolePermission[]
+  assignments    UserRoleAssignment[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id            String           @id @default(uuid())
+  permissionKey String           @unique @map("permission_key")
+  description   String
+
+  roles         RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRoleAssignment {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  roleId    String    @map("role_id")
+  scopeType String    @default("GLOBAL") @map("scope_type") // GLOBAL, ORGANIZATION, BRANCH
+  scopeId   String?   @map("scope_id")
+  grantedBy String    @map("granted_by")
+  startsAt  DateTime  @default(now()) @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([userId, roleId])
+  @@map("user_role_assignments")
+}
+
+model Session {
+  id                 String    @id @default(uuid())
+  userId             String    @map("user_id")
+  deviceHint         String?   @map("device_hint")
+  ipHashOrMinimised  String?   @map("ip_hash_or_minimised")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  expiresAt          DateTime  @map("expires_at")
+  revokedAt          DateTime? @map("revoked_at")
+
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+// -------------------------------------------------------------
+// Compliance & Safer Gambling
+// -------------------------------------------------------------
+
+model AccountRestriction {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  restrictionType String    @map("restriction_type") // DEPOSIT_LIMIT, SELF_EXCLUSION, TIME_OUT, GAMING_BLOCK
+  scope           String    @default("ALL")
+  startsAt        DateTime  @default(now()) @map("starts_at")
+  endsAt          DateTime? @map("ends_at")
+  reasonCode      String    @map("reason_code")
+  createdBy       String    @map("created_by")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, restrictionType])
+  @@map("account_restrictions")
+}
+
+model ComplianceCase {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  caseType   String    @map("case_type") // AML, SOURCE_OF_FUNDS, SAFER_GAMBLING
+  priority   String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status     String    @default("OPEN")   // OPEN, UNDER_REVIEW, RESOLVED, CLOSED
+  assignedTo String?   @map("assigned_to")
+  openedAt   DateTime  @default(now()) @map("opened_at")
+  closedAt   DateTime? @map("closed_at")
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("compliance_cases")
+}
+
+// -------------------------------------------------------------
+// Double-Entry Ledger & Wallets
+// -------------------------------------------------------------
+
+enum WalletType {
+  PLAYER_PRIMARY
+  OPERATOR_SYSTEM
+}
+
+model Wallet {
+  id                  String     @id @default(uuid())
+  userId              String     @map("user_id")
+  walletType          WalletType @default(PLAYER_PRIMARY) @map("wallet_type")
+  currency            String     @default("GBP")
+  cashAvailableMinor  BigInt     @default(0) @map("cash_available_minor")
+  cashReservedMinor   BigInt     @default(0) @map("cash_reserved_minor")
+  bonusMinor          BigInt     @default(0) @map("bonus_minor")
+  pointsBalance       BigInt     @default(0) @map("points_balance")
+  status              String     @default("ACTIVE")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currency])
+  @@map("wallets")
+}
+
+model LedgerAccount {
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  accountCode    String         @unique @map("account_code")
+  accountType    String         @map("account_type") // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  currency       String         @default("GBP")
+  status         String         @default("ACTIVE")
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  entries        LedgerEntry[]
+
+  @@map("ledger_accounts")
+}
+
+model LedgerTransaction {
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  sourceType     String         @map("source_type") // CRYPTO_DEPOSIT, WITHDRAWAL, GAME_STAKE, GAME_WIN, BONUS_GRANT
+  sourceId       String         @map("source_id")
+  idempotencyKey String         @unique @map("idempotency_key")
+  status         String         @default("POSTED") // POSTED, REVERSED
+  reasonCode     String         @map("reason_code")
+  actorId        String?        @map("actor_id")
+  correlationId  String         @map("correlation_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  entries        LedgerEntry[]
+
+  @@index([sourceType, sourceId])
+  @@map("ledger_transactions")
+}
+
+enum EntryDirection {
+  DEBIT
+  CREDIT
+}
+
+model LedgerEntry {
+  id              String            @id @default(uuid())
+  transactionId   String            @map("transaction_id")
+  ledgerAccountId String            @map("ledger_account_id")
+  direction       EntryDirection
+  amountMinor     BigInt            @map("amount_minor") // Integer GBP pence
+  currency        String            @default("GBP")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  transaction     LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  ledgerAccount   LedgerAccount     @relation(fields: [ledgerAccountId], references: [id])
+
+  @@index([transactionId])
+  @@index([ledgerAccountId])
+  @@map("ledger_entries")
+}
+
+// -------------------------------------------------------------
+// Direct Crypto QR Deposits (No PSP) & Withdrawals
+// -------------------------------------------------------------
+
+enum CryptoIntentStatus {
+  PENDING
+  DETECTED
+  CONFIRMING
+  COMPLETED
+  EXPIRED
+  FAILED
+  RISK_HOLD
+}
+
+model CryptoDepositIntent {
+  id                     String             @id @default(uuid())
+  userId                 String             @map("user_id")
+  asset                  String             // USDT, USDC, BTC, ETH
+  network                String             // polygon, ethereum, bitcoin, bsc
+  receivingAddress       String             @map("receiving_address")
+  expectedAmountCrypto   Decimal            @map("expected_amount_crypto") @db.Decimal(36, 18)
+  quotedRateGbp          Decimal            @map("quoted_rate_gbp") @db.Decimal(18, 6)
+  creditedGbpMinor       BigInt             @map("credited_gbp_minor")
+  qrPayload              String             @map("qr_payload")
+  status                 CryptoIntentStatus @default(PENDING)
+  txHash                 String?            @map("tx_hash")
+  observedConfirmations  Int                @default(0) @map("observed_confirmations")
+  requiredConfirmations  Int                @default(12) @map("required_confirmations")
+  idempotencyKey         String             @unique @map("idempotency_key")
+  expiresAt              DateTime           @map("expires_at")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+
+  user                   User               @relation(fields: [userId], references: [id])
+
+  @@index([status, receivingAddress])
+  @@index([txHash])
+  @@map("crypto_deposit_intents")
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  RISK_HOLD
+  PENDING_APPROVAL
+  APPROVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+model WithdrawalRequest {
+  id                   String           @id @default(uuid())
+  userId               String           @map("user_id")
+  amountMinor          BigInt           @map("amount_minor")
+  currency             String           @default("GBP")
+  destinationType      String           @map("destination_type") // UK_BANK_BACS, DIRECT_CRYPTO
+  destinationReference String           @map("destination_reference")
+  status               WithdrawalStatus @default(REQUESTED)
+  makerId              String?          @map("maker_id")
+  checkerId            String?          @map("checker_id")
+  riskScore            Int              @default(0) @map("risk_score")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  decidedAt            DateTime?        @map("decided_at")
+
+  user                 User             @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@map("withdrawal_requests")
+}
+
+// -------------------------------------------------------------
+// Games, Providers, Rounds & Settlements
+// -------------------------------------------------------------
+
+model GameProvider {
+  id              String       @id @default(uuid())
+  organizationId  String       @map("organization_id")
+  name            String
+  slug            String       @unique
+  status          String       @default("ACTIVE")
+  integrationType String       @default("CLIENT_MATKA_API") @map("integration_type")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  games           Game[]
+
+  @@map("game_providers")
+}
+
+model Game {
+  id               String        @id @default(uuid())
+  organizationId   String        @map("organization_id")
+  providerId       String        @map("provider_id")
+  slug             String        @unique
+  name             String
+  category         String        // MATKA, CARROM, LUDO, OTHER_GAMES
+  status           String        @default("ACTIVE")
+  realMoneyEnabled Boolean       @default(false) @map("real_money_enabled")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  organization     Organization  @relation(fields: [organizationId], references: [id])
+  provider         GameProvider  @relation(fields: [providerId], references: [id])
+  sessions         GameSession[]
+
+  @@index([category, status])
+  @@map("games")
+}
+
+model GameSession {
+  id                 String              @id @default(uuid())
+  gameId             String              @map("game_id")
+  userId             String              @map("user_id")
+  providerSessionRef String              @map("provider_session_ref")
+  status             String              @default("ACTIVE")
+  startedAt          DateTime            @default(now()) @map("started_at")
+  endedAt            DateTime?           @map("ended_at")
+
+  game               Game                @relation(fields: [gameId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  participations     GameParticipation[]
+
+  @@map("game_sessions")
+}
+
+model GameParticipation {
+  id             String      @id @default(uuid())
+  gameSessionId  String      @map("game_session_id")
+  userId         String      @map("user_id")
+  roundId        String      @map("round_id")
+  stakeMinor     BigInt      @map("stake_minor")
+  payoutMinor    BigInt      @default(0) @map("payout_minor")
+  currency       String      @default("GBP")
+  idempotencyKey String      @unique @map("idempotency_key")
+  status         String      @default("CONFIRMED")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  session        GameSession @relation(fields: [gameSessionId], references: [id])
+  user           User        @relation(fields: [userId], references: [id])
+
+  @@index([roundId])
+  @@map("game_participations")
+}
+
+// -------------------------------------------------------------
+// Admin Maker-Checker Dual Approval & Auditing
+// -------------------------------------------------------------
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ApprovalRequest {
+  id                   String         @id @default(uuid())
+  actionType           String         @map("action_type") // WITHDRAWAL_PAYOUT, GAME_RESULT_OVERRIDE, SYSTEM_KILLSWITCH, BALANCE_ADJUSTMENT
+  resourceType         String         @map("resource_type")
+  resourceId           String         @map("resource_id")
+  requestedBy          String         @map("requested_by") // Maker ID
+  requestedPayloadHash String         @map("requested_payload_hash")
+  status               ApprovalStatus @default(PENDING)
+  approvedBy           String?        @map("approved_by") // Checker ID (Must !== Maker ID)
+  reason               String
+  createdAt            DateTime       @default(now()) @map("created_at")
+  decidedAt            DateTime?      @map("decided_at")
+
+  @@index([status, actionType])
+  @@map("approval_requests")
+}
+
+model AuditEvent {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  actorType      String       @map("actor_type") // USER, STAFF, SYSTEM
+  actorId        String       @map("actor_id")
+  action         String
+  resourceType   String       @map("resource_type")
+  resourceId     String       @map("resource_id")
+  reason         String?
+  ipHint         String?      @map("ip_hint")
+  correlationId  String       @map("correlation_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_events")
+}
