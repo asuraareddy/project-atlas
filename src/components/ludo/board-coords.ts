@@ -149,35 +149,35 @@ export const COLOR_STYLES: Record<
   }
 > = {
   red: {
-    bg: '#ef4444',
-    border: '#dc2626',
+    bg: '#E52424',
+    border: '#C01C1C',
     text: '#ffffff',
-    accent: '#f87171',
-    darkBg: '#991b1b',
-    gradient: 'from-[#ef4444] to-[#b91c1c]'
+    accent: '#FF4D4D',
+    darkBg: '#7F1D1D',
+    gradient: 'from-[#E52424] to-[#B91C1C]'
   },
   green: {
-    bg: '#10b981',
-    border: '#059669',
+    bg: '#12A04A',
+    border: '#0E823B',
     text: '#ffffff',
-    accent: '#34d399',
-    darkBg: '#065f46',
-    gradient: 'from-[#10b981] to-[#047857]'
+    accent: '#0DBA78',
+    darkBg: '#064E3B',
+    gradient: 'from-[#12A04A] to-[#0DBA78]'
   },
   yellow: {
-    bg: '#f59e0b',
-    border: '#d97706',
-    text: '#ffffff',
-    accent: '#fbbf24',
-    darkBg: '#92400e',
-    gradient: 'from-[#f59e0b] to-[#b45309]'
+    bg: '#FBD706',
+    border: '#E0C000',
+    text: '#04093A',
+    accent: '#FFE84A',
+    darkBg: '#854D0E',
+    gradient: 'from-[#FBD706] to-[#EAB308]'
   },
   blue: {
-    bg: '#3b82f6',
-    border: '#2563eb',
+    bg: '#0D6EFD',
+    border: '#0B5ED7',
     text: '#ffffff',
-    accent: '#60a5fa',
-    darkBg: '#1e40af',
-    gradient: 'from-[#3b82f6] to-[#1d4ed8]'
+    accent: '#60A5FA',
+    darkBg: '#1E3A8A',
+    gradient: 'from-[#0D6EFD] to-[#0B5ED7]'
   }
 };
