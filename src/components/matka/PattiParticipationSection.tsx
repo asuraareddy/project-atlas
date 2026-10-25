@@ -54,7 +54,7 @@ export default function PattiParticipationSection({
   );
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [gameType, setGameType] = useState<'OPEN' | 'CLOSE'>('OPEN');
-  const [selectedDigit, setSelectedDigit] = useState<number>(3); // Default 3
+  const [selectedDigit, setSelectedDigit] = useState<number | null>(3); // Default 3, allows unselect (null)
   const [category, setCategory] = useState<PattiCategory>('single');
   const [pointsInput, setPointsInput] = useState<number>(5);
 
@@ -88,6 +88,9 @@ export default function PattiParticipationSection({
 
   // Derive authoritative possibilities for (selectedDigit, category)
   const currentPossibilities = useMemo(() => {
+    if (selectedDigit === null) {
+      return [];
+    }
     try {
       return getPattiPossibilities(selectedDigit, category);
     } catch (err: any) {
@@ -127,11 +130,16 @@ export default function PattiParticipationSection({
       setSelectedEntries((prev) => prev.filter((item) => item.id !== id));
     } else {
       // Add with entered points
+      const computedDigit =
+        selectedDigit !== null
+          ? selectedDigit
+          : patti.split('').reduce((a, b) => a + parseInt(b, 10), 0) % 10;
+
       const newItem: SelectedPattiItem = {
         id,
         pattiNumber: patti,
         category,
-        digit: selectedDigit,
+        digit: computedDigit,
         gameType,
         date: selectedDate,
         points: pointsInput,
@@ -149,11 +157,16 @@ export default function PattiParticipationSection({
       for (const patti of currentPossibilities) {
         const id = makeItemId(patti);
         if (!updated.some((item) => item.id === id)) {
+          const computedDigit =
+            selectedDigit !== null
+              ? selectedDigit
+              : patti.split('').reduce((a, b) => a + parseInt(b, 10), 0) % 10;
+
           updated.push({
             id,
             pattiNumber: patti,
             category,
-            digit: selectedDigit,
+            digit: computedDigit,
             gameType,
             date: selectedDate,
             points: pointsInput,
@@ -411,11 +424,31 @@ export default function PattiParticipationSection({
         <div className="flex items-center justify-between">
           <label className="text-xs font-black text-white tracking-wide uppercase flex items-center gap-2">
             <span>Select Single Digit:</span>
-            <span className="px-2 py-0.5 rounded-md bg-[#7e0ac2] text-white font-mono text-sm font-bold shadow-sm">
-              {selectedDigit}
-            </span>
+            {selectedDigit !== null ? (
+              <span className="px-2 py-0.5 rounded-md bg-[#7e0ac2] text-white font-mono text-sm font-bold shadow-sm">
+                {selectedDigit}
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-md bg-white/10 text-[#c4bfd0] font-sans text-xs font-semibold">
+                None (Unchecked)
+              </span>
+            )}
           </label>
-          <span className="text-[11px] text-[#c4bfd0]/80">Tap digit to update possibilities</span>
+          <div className="flex items-center gap-2">
+            {selectedDigit !== null && (
+              <button
+                type="button"
+                onClick={() => setSelectedDigit(null)}
+                className="text-[11px] font-bold text-[#ff5a7a] hover:text-[#ff3b61] bg-[#ff5a7a]/10 hover:bg-[#ff5a7a]/20 border border-[#ff5a7a]/30 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                title="Uncheck selected digit"
+              >
+                <span>✕ Unselect</span>
+              </button>
+            )}
+            <span className="text-[11px] text-[#c4bfd0]/80 hidden sm:inline">
+              {selectedDigit !== null ? 'Click selected number to uncheck' : 'Click a number to select'}
+            </span>
+          </div>
         </div>
 
         {/* Mobile Keypad: 5 columns on mobile (2 clean rows), 10 columns on tablet/desktop */}
@@ -426,8 +459,9 @@ export default function PattiParticipationSection({
               <button
                 key={digit}
                 type="button"
-                onClick={() => setSelectedDigit(digit)}
-                className={`h-12 sm:h-14 rounded-xl font-mono text-lg sm:text-xl font-black transition-all flex items-center justify-center active:scale-95 select-none ${
+                onClick={() => setSelectedDigit((prev) => (prev === digit ? null : digit))}
+                aria-pressed={isSelected}
+                className={`h-12 sm:h-14 rounded-xl font-mono text-lg sm:text-xl font-black transition-all flex items-center justify-center active:scale-95 select-none cursor-pointer ${
                   isSelected
                     ? 'bg-[#7e0ac2] text-white ring-2 ring-[#b45df0] shadow-lg shadow-[#7e0ac2]/50 scale-102 ring-offset-1 ring-offset-[#1a1a1a]'
                     : 'bg-[#242424] text-white/90 hover:text-white hover:bg-white/10 border border-white/10'
@@ -492,24 +526,40 @@ export default function PattiParticipationSection({
         {/* Quick Bulk Actions */}
         <div className="flex items-center justify-between text-xs">
           <div className="text-[11px] text-[#c4bfd0]">
-            Digit <span className="font-bold text-white">[{selectedDigit}]</span> • {category === 'single' ? 'Single' : category === 'double' ? 'Double' : 'Triple'} Patti ({currentPossibilities.length} matching)
+            {selectedDigit !== null ? (
+              <>
+                Digit <span className="font-bold text-white">[{selectedDigit}]</span> •{' '}
+                {category === 'single'
+                  ? 'Single'
+                  : category === 'double'
+                  ? 'Double'
+                  : 'Triple'}{' '}
+                Patti ({currentPossibilities.length} matching)
+              </>
+            ) : (
+              <span className="text-[#f59e0b] font-medium">
+                No digit selected • Click any number (0–9) above
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSelectAll}
-              className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-white hover:border-[#b45df0] transition-colors"
-            >
-              Select All
-            </button>
-            <button
-              type="button"
-              onClick={handleDeselectAll}
-              className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-[#c4bfd0] hover:text-white transition-colors"
-            >
-              Deselect All
-            </button>
-          </div>
+          {currentPossibilities.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-white hover:border-[#b45df0] transition-colors"
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                onClick={handleDeselectAll}
+                className="px-2.5 py-1 rounded-lg bg-[#242424] border border-white/15 text-[11px] font-bold text-[#c4bfd0] hover:text-white transition-colors"
+              >
+                Deselect All
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -526,10 +576,29 @@ export default function PattiParticipationSection({
             </span>
           </div>
 
-          {/* Compact Card Grid - Thumb-Friendly and Mobile-First */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-            {currentPossibilities.map((patti) => {
-              const isSelected = isPattiSelected(patti);
+          {/* Compact Card Grid or Empty State */}
+          {currentPossibilities.length === 0 ? (
+            <div className="p-8 rounded-xl bg-[#242424] border border-white/10 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#7e0ac2]/15 border border-[#b45df0]/30 flex items-center justify-center mx-auto text-[#b45df0]">
+                <Dice5 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-white">No Single Digit Selected</p>
+                <p className="text-xs text-[#c4bfd0] max-w-sm mx-auto">
+                  Click any digit button above (1, 2, 3, 4, 5, 6, 7, 8, 9, 0) to view all possible{' '}
+                  {category === 'single'
+                    ? 'Single Patti'
+                    : category === 'double'
+                    ? 'Double Patti'
+                    : 'Triple Patti'}{' '}
+                  numbers. Click the selected digit again to uncheck.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              {currentPossibilities.map((patti) => {
+                const isSelected = isPattiSelected(patti);
               return (
                 <div
                   key={patti}
@@ -591,7 +660,8 @@ export default function PattiParticipationSection({
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Right Column: Selected Participation Slip (Mobile Vertical Cards) */}
         <div className="lg:col-span-5 flex flex-col justify-between space-y-3 bg-[#242424] border border-white/10 rounded-xl p-3.5 sm:p-4">

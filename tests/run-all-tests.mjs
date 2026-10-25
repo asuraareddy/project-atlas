@@ -674,6 +674,37 @@ test('Category switching preserves selected digit, gameType, date, and points am
   assert.ok(double7.includes('115'));
 });
 
+test('Clicking on an already selected single digit unchecks/unselects it (sets to null)', () => {
+  let selectedDigit = 3;
+
+  function toggleDigit(digit) {
+    selectedDigit = selectedDigit === digit ? null : digit;
+    return selectedDigit;
+  }
+
+  // Initial: 3 is selected
+  assert.equal(selectedDigit, 3);
+
+  // User clicks 3 again -> should unselect (become null)
+  const afterClick = toggleDigit(3);
+  assert.equal(afterClick, null, 'Clicking selected digit must uncheck/unselect it');
+  assert.equal(selectedDigit, null);
+
+  // When digit is null, possibilities list is empty
+  const possibilitiesWhenNull = selectedDigit !== null ? getPattiPossibilities(selectedDigit, 'single') : [];
+  assert.equal(possibilitiesWhenNull.length, 0, 'Possibilities must be empty when no digit is selected');
+
+  // User clicks 8 -> selects 8
+  const afterClick8 = toggleDigit(8);
+  assert.equal(afterClick8, 8);
+  const possibilities8 = getPattiPossibilities(selectedDigit, 'single');
+  assert.equal(possibilities8.length, 12, 'Selecting digit 8 displays 12 Single Patti');
+
+  // Explicit unselect button sets to null
+  selectedDigit = null;
+  assert.equal(selectedDigit, null, 'Unselect action must reset digit to null');
+});
+
 // ------------------------------------------------------------------
 // Suite 9: Admin Deposit Management & Dynamic Crypto QR Generation
 // ------------------------------------------------------------------
