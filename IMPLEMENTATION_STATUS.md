@@ -59,7 +59,12 @@
   - `/admin/players`: Player search, branch-scoped access, KYC verification
   - `/admin/compliance`: Safer gambling queue, self-exclusion blocks, AML cases
   - `/admin/finance`: P&L reports, ledger explorer, reconciliation exceptions
-  - `/admin/crypto-deposits`: Whitelisted assets/networks, receiving addresses, watcher health
+  - `/admin/crypto-deposits`: **Deposit Management & Dynamic Crypto QR Watcher**:
+    - Renamed from Chain Watcher to focus on **Deposit Management**
+    - Dynamic QR code generation directly from operator receiving address
+    - Live QR code preview updated in real-time as operator modifies addresses
+    - Live GBP exchange rate feed configuration, block confirmation depths, and asset pause/resume
+    - Authoritative backend APIs (`PUT` / `POST` `/api/v1/crypto/whitelist`) immediately reflected in player deposit intents
   - `/admin/withdrawals`: Withdrawal queue, risk holds, maker-checker dual approval
   - `/admin/games`: Game catalog, schedule, kill switches, result publication with dual approval
   - `/admin/branches`: Branch/partner management, scoped staff assignments
