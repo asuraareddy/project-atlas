@@ -10,7 +10,7 @@ import { MarketSummary, ChartRecord } from '@/domain/games/adapters/types';
 
 export default function MatkaPage() {
   const [markets, setMarkets] = useState<MarketSummary[]>([]);
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'closed' | 'declared' | 'pending'>('all');
   const [search, setSearch] = useState('');
   const [selectedMarketForChart, setSelectedMarketForChart] = useState<MarketSummary | null>(null);
   const [chartData, setChartData] = useState<ChartRecord[]>([]);
@@ -40,6 +40,9 @@ export default function MatkaPage() {
 
   useEffect(() => {
     fetchMarkets();
+    // Auto-poll every 30 seconds per provider rate-limit guidelines
+    const interval = setInterval(fetchMarkets, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const openChart = async (market: MarketSummary) => {
@@ -93,8 +96,16 @@ export default function MatkaPage() {
   };
 
   const filteredMarkets = markets.filter((m) => {
-    const matchesFilter = filter === 'all' || m.status === filter;
-    const matchesSearch = m.name.toLowerCase().includes(search.toLowerCase());
+    let matchesFilter = true;
+    if (filter === 'open') matchesFilter = m.status === 'open';
+    if (filter === 'closed') matchesFilter = m.status === 'closed';
+    if (filter === 'declared') matchesFilter = m.latestResult?.resultState === 'declared';
+    if (filter === 'pending') matchesFilter = m.latestResult?.resultState === 'pending';
+
+    const matchesSearch =
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.providerRef.externalId.toLowerCase().includes(search.toLowerCase());
+
     return matchesFilter && matchesSearch;
   });
 
@@ -110,10 +121,10 @@ export default function MatkaPage() {
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
             <Dice5 className="w-8 h-8 text-[#b45df0]" />
-            <span>Matka Number Draw Hub</span>
+            <span>Matka Official Draw Hub</span>
           </h1>
           <p className="text-xs text-[#c4bfd0] mt-1">
-            Official draw schedules, live result charts, and server-verified participation with cut-off protection.
+            Live results synchronized with provider API, authoritative draw schedules, and server-verified participation.
           </p>
         </div>
 
@@ -123,22 +134,22 @@ export default function MatkaPage() {
             className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#242424] border border-white/10 text-xs font-medium text-white hover:border-[#b45df0] transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#b45df0] ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Feed</span>
+            <span>Refresh Feed (30s)</span>
           </button>
           <div className="text-[11px] text-[#c4bfd0] bg-[#242424] px-3 py-2 rounded-lg border border-white/10">
-            Source Freshness: <span className="text-white font-mono">{lastRefreshed || 'Live'}</span>
+            Feed Updated: <span className="text-white font-mono">{lastRefreshed || 'Live'}</span>
           </div>
         </div>
       </div>
 
       {/* Controls & Search */}
-      <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-4">
         {/* Search */}
-        <div className="relative w-full sm:w-80">
+        <div className="relative w-full lg:w-80">
           <Search className="w-4 h-4 text-[#c4bfd0] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search market by name..."
+            placeholder="Search market by name or API ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-[#1f1f1f] text-sm text-white rounded-lg border border-white/10 focus:border-[#b45df0] focus:outline-none"
@@ -146,10 +157,10 @@ export default function MatkaPage() {
         </div>
 
         {/* Status Filters */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
               filter === 'all'
                 ? 'bg-[#7e0ac2] text-white shadow-md shadow-[#7e0ac2]/40'
                 : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
@@ -158,24 +169,34 @@ export default function MatkaPage() {
             All Markets ({markets.length})
           </button>
           <button
-            onClick={() => setFilter('open')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'open'
+            onClick={() => setFilter('declared')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              filter === 'declared'
                 ? 'bg-[#10b981] text-white shadow-md shadow-[#10b981]/40'
                 : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
             }`}
           >
-            Open Now
+            Declared ({markets.filter(m => m.latestResult?.resultState === 'declared').length})
           </button>
           <button
-            onClick={() => setFilter('closed')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              filter === 'closed'
-                ? 'bg-[#ff5a7a] text-white shadow-md shadow-[#ff5a7a]/40'
+            onClick={() => setFilter('pending')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              filter === 'pending'
+                ? 'bg-[#f59e0b] text-black shadow-md shadow-[#f59e0b]/40 font-bold'
                 : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
             }`}
           >
-            Closed
+            Pending Result ({markets.filter(m => m.latestResult?.resultState === 'pending').length})
+          </button>
+          <button
+            onClick={() => setFilter('open')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              filter === 'open'
+                ? 'bg-[#3b82f6] text-white shadow-md shadow-[#3b82f6]/40'
+                : 'bg-[#1f1f1f] text-[#c4bfd0] hover:text-white border border-white/10'
+            }`}
+          >
+            Open for Play
           </button>
         </div>
       </div>
@@ -200,7 +221,7 @@ export default function MatkaPage() {
                       : 'bg-[#ff5a7a]/15 text-[#ff5a7a] border border-[#ff5a7a]/40'
                   }`}
                 >
-                  {market.status}
+                  {market.status === 'open' ? 'Open for Play' : 'Closed'}
                 </span>
               </div>
 
@@ -209,28 +230,71 @@ export default function MatkaPage() {
               {/* Timing */}
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#c4bfd0] bg-[#1f1f1f] p-2.5 rounded-lg border border-white/5">
                 <div>
-                  <span className="text-[10px] text-[#9c9aa8] block">Opens</span>
+                  <span className="text-[10px] text-[#9c9aa8] block">Opens (IST)</span>
                   <span className="font-semibold text-white">{market.opensAt}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[#9c9aa8] block">Closes</span>
+                  <span className="text-[10px] text-[#9c9aa8] block">Closes (IST)</span>
                   <span className="font-semibold text-white">{market.closesAt}</span>
                 </div>
               </div>
 
               {/* Latest Result Card */}
-              <div className="mt-4 p-3 rounded-lg bg-[#2a2a2a] border border-white/10 text-center">
-                <span className="text-[10px] uppercase tracking-wider text-[#b45df0] font-semibold block mb-1">
-                  Latest Official Result
-                </span>
-                <div className="flex items-center justify-center gap-3 font-mono font-bold text-lg text-white">
-                  <span className="text-[#10b981]">{market.latestResult?.openPana || '***'}</span>
-                  <span className="text-xl text-[#b45df0]">- {market.latestResult?.jodi || '**'} -</span>
-                  <span className="text-[#10b981]">{market.latestResult?.closePana || '***'}</span>
+              <div className="mt-4 p-3.5 rounded-lg bg-[#2a2a2a] border border-white/10 text-center">
+                <div className="flex items-center justify-between mb-2 px-1">
+                  <span className="text-[10px] uppercase tracking-wider text-[#b45df0] font-semibold">
+                    Official API Result
+                  </span>
+                  <span className="text-[9px] font-mono text-[#9c9aa8]" title="Exact provider identifier">
+                    ID: {market.providerRef.externalId}
+                  </span>
                 </div>
-                <span className="text-[10px] text-[#c4bfd0] mt-1 block">
-                  Status: {market.latestResult?.status || 'final'}
-                </span>
+
+                {market.latestResult?.resultState === 'declared' ? (
+                  <div>
+                    <div className="flex items-center justify-center gap-3 font-mono font-bold text-lg text-white">
+                      <span className="text-[#10b981]">{market.latestResult.openPana}</span>
+                      <span className="text-xl text-[#b45df0]">- {market.latestResult.jodi} -</span>
+                      <span className="text-[#10b981]">{market.latestResult.closePana}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">
+                        <CheckCircle2 className="w-3 h-3" /> Result Declared
+                      </span>
+                    </div>
+                  </div>
+                ) : market.latestResult?.resultState === 'open_declared' ? (
+                  <div>
+                    <div className="flex items-center justify-center gap-3 font-mono font-bold text-lg text-white">
+                      <span className="text-[#10b981]">{market.latestResult.openPana}</span>
+                      <span className="text-xl text-[#b45df0]">- {market.latestResult.jodi} -</span>
+                      <span className="text-[#c4bfd0]/50">***</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#f59e0b] bg-[#f59e0b]/10 px-2 py-0.5 rounded">
+                        <Clock className="w-3 h-3 animate-spin" /> Open Declared • Close Pending
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="py-1 text-center">
+                      <span className="inline-flex items-center gap-1.5 font-mono font-bold text-base text-[#f59e0b]">
+                        <Clock className="w-4 h-4 text-[#f59e0b] animate-pulse" />
+                        Pending Result
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[#9c9aa8] block">
+                      Awaiting official draw declaration
+                    </span>
+                  </div>
+                )}
+
+                {market.isStale && (
+                  <div className="mt-2 text-[9px] text-[#f59e0b] bg-[#f59e0b]/10 py-0.5 px-2 rounded border border-[#f59e0b]/20">
+                    ⚠ Reconnecting to provider feed (serving cached state)
+                  </div>
+                )}
               </div>
             </div>
 

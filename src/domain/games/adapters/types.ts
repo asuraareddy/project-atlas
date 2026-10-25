@@ -22,23 +22,27 @@ export interface ProviderRef {
 }
 
 export interface MarketSummary {
-  id: string; // Platform ID
-  providerRef: ProviderRef;
+  id: string; // Platform unique ID (e.g. mkt_kalyan_morning)
+  providerRef: ProviderRef; // externalId: exact API market name (e.g. 'KALYAN MORNING')
   name: string;
   status: ProviderStatus;
   timezone: string;
-  opensAt: string; // ISO timestamp
-  closesAt: string; // ISO timestamp
+  opensAt: string; // e.g. "11:40 AM"
+  closesAt: string; // e.g. "12:40 PM"
   cutoffAt: string; // ISO timestamp (enforced on server)
   lastUpdatedAt: string;
   capabilities: string[];
   latestResult?: {
-    openPana?: string;
-    closePana?: string;
-    jodi?: string;
-    status: 'provisional' | 'final' | 'corrected' | 'void';
+    openPana?: string; // e.g. "579" or "***"
+    closePana?: string; // e.g. "336" or "***"
+    jodi?: string; // e.g. "12" or "7*" or "**"
+    rawResult?: string; // raw API string, e.g. "579-12-336" or "379-9"
+    displayResult?: string; // formatted string or "Pending Result"
+    resultState: 'declared' | 'open_declared' | 'pending' | 'unavailable';
+    status: 'provisional' | 'final' | 'corrected' | 'void' | 'pending';
     publishedAt: string;
   };
+  isStale?: boolean;
 }
 
 export interface ChartRecord {

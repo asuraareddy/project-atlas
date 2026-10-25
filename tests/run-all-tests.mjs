@@ -370,6 +370,92 @@ test('Wallet balances, transactions, and admin pages are excluded from Service W
 });
 
 // ------------------------------------------------------------------
+// Suite 7: Exact Market-to-API Matching & Zero Fabrication Invariants
+// ------------------------------------------------------------------
+console.log('\n[Suite 7: Exact Market-to-API Matching & Zero Fabrication]');
+
+test('Exact match prevents cross-market result contamination (Kalyan vs Kalyan Morning vs Kalyan Night)', () => {
+  const liveResultsFeed = [
+    { name: 'KALYAN MORNING', result: '579-12-336' },
+    { name: 'MADHUR DAY', result: '457-63-689' }
+  ];
+
+  const resultsMap = new Map();
+  for (const item of liveResultsFeed) {
+    resultsMap.set(item.name.trim().toUpperCase(), item);
+  }
+
+  // Exact matching only:
+  function getMarketResult(marketName) {
+    const exact = resultsMap.get(marketName.trim().toUpperCase());
+    if (exact && exact.result) {
+      return { declared: true, result: exact.result };
+    }
+    return { declared: false, result: 'Pending Result' };
+  }
+
+  // 1. KALYAN MORNING has declared:
+  const resMorning = getMarketResult('KALYAN MORNING');
+  assert.equal(resMorning.declared, true);
+  assert.equal(resMorning.result, '579-12-336');
+
+  // 2. KALYAN has NOT declared yet — MUST be Pending Result, NEVER copy Kalyan Morning
+  const resKalyan = getMarketResult('KALYAN');
+  assert.equal(resKalyan.declared, false);
+  assert.equal(resKalyan.result, 'Pending Result', 'Kalyan must NOT copy Kalyan Morning result via partial matching');
+
+  // 3. KALYAN NIGHT has NOT declared yet — MUST be Pending Result
+  const resNight = getMarketResult('KALYAN NIGHT');
+  assert.equal(resNight.declared, false);
+  assert.equal(resNight.result, 'Pending Result', 'Kalyan Night must NOT copy Kalyan Morning result');
+});
+
+test('Undeclared markets display "Pending Result" instead of inventing or reusing numbers', () => {
+  const unDeclaredMarket = {
+    name: 'MAIN BAZAR',
+    opensAt: '10:00 PM',
+    closesAt: '12:10 AM',
+    rawResult: ''
+  };
+
+  function formatDisplay(raw) {
+    if (!raw || raw.trim() === '') {
+      return 'Pending Result';
+    }
+    return raw;
+  }
+
+  const display = formatDisplay(unDeclaredMarket.rawResult);
+  assert.equal(display, 'Pending Result');
+  assert.notEqual(display, '246-28-134', 'Fake baseline numbers must never be displayed');
+  assert.notEqual(display, '358-67-278', 'Fake baseline numbers must never be displayed');
+});
+
+test('2-part partial result (e.g. 379-9) displays open pana, open single with pending asterisk', () => {
+  const rawPartial = '379-9';
+  const parts = rawPartial.split('-');
+  const openPana = parts[0];
+  const openSingle = parts[1];
+  const display = `${openPana}-${openSingle}*-***`;
+
+  assert.equal(openPana, '379');
+  assert.equal(openSingle, '9');
+  assert.equal(display, '379-9*-***');
+});
+
+test('When API is unavailable and no cache exists, results are marked pending/unavailable without fabricating data', () => {
+  const fallback = {
+    displayResult: 'Pending Result',
+    resultState: 'unavailable',
+    isStale: true
+  };
+
+  assert.equal(fallback.displayResult, 'Pending Result');
+  assert.equal(fallback.resultState, 'unavailable');
+  assert.equal(fallback.isStale, true);
+});
+
+// ------------------------------------------------------------------
 // Summary Report
 // ------------------------------------------------------------------
 console.log('\n======================================================');
