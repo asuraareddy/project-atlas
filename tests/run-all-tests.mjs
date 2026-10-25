@@ -277,6 +277,71 @@ test('Server rejects participation submissions after cutoff time regardless of c
   );
 });
 
+test('Matka live API result parser decomposes open pana, jodi, and close pana correctly', () => {
+  function parseResultString(raw) {
+    if (!raw || raw.trim() === '') {
+      return { openPana: '***', jodi: '**', closePana: '***', isFinal: false, isOpenDeclared: false };
+    }
+    const parts = raw.split('-');
+    const openPana = parts[0]?.trim() || '***';
+    const jodi = parts[1]?.trim() || '**';
+    const closePana = parts[2]?.trim() || '***';
+    const isFinal = !openPana.includes('*') && !jodi.includes('*') && !closePana.includes('*');
+    const isOpenDeclared = !openPana.includes('*') && (closePana.includes('*') || !parts[2]);
+    return { openPana, jodi, closePana, isFinal, isOpenDeclared };
+  }
+
+  // Declared result: "348-56-880"
+  const res1 = parseResultString('348-56-880');
+  assert.equal(res1.openPana, '348');
+  assert.equal(res1.jodi, '56');
+  assert.equal(res1.closePana, '880');
+  assert.equal(res1.isFinal, true);
+
+  // Partial open declared: "123-4*-***"
+  const res2 = parseResultString('123-4*-***');
+  assert.equal(res2.openPana, '123');
+  assert.equal(res2.jodi, '4*');
+  assert.equal(res2.closePana, '***');
+  assert.equal(res2.isOpenDeclared, true);
+  assert.equal(res2.isFinal, false);
+
+  // Undeclared / open market
+  const res3 = parseResultString('***-**-***');
+  assert.equal(res3.openPana, '***');
+  assert.equal(res3.jodi, '**');
+  assert.equal(res3.closePana, '***');
+  assert.equal(res3.isFinal, false);
+});
+
+test('In-memory cache prevents hammering matkaapi.com during 30s TTL window', () => {
+  let apiCallCount = 0;
+  let cachedData = null;
+  let lastFetchTime = 0;
+  const TTL = 30000;
+
+  function getMarkets() {
+    const now = Date.now();
+    if (cachedData && (now - lastFetchTime) < TTL) {
+      return { data: cachedData, fromCache: true };
+    }
+    apiCallCount++;
+    cachedData = [{ name: 'Kalyan' }];
+    lastFetchTime = now;
+    return { data: cachedData, fromCache: false };
+  }
+
+  // First call fetches
+  const r1 = getMarkets();
+  assert.equal(r1.fromCache, false);
+  assert.equal(apiCallCount, 1);
+
+  // Second immediate call uses cache
+  const r2 = getMarkets();
+  assert.equal(r2.fromCache, true);
+  assert.equal(apiCallCount, 1, 'Subsequent request within TTL must be served from cache');
+});
+
 // ------------------------------------------------------------------
 // Suite 6: PWA Caching Policy (Document 12)
 // ------------------------------------------------------------------

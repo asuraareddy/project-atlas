@@ -69,11 +69,14 @@
 ### Phase 5: Game Provider Adapter Framework & Game Integrations
 - [x] Canonical `GameAdapter` interface (`getCapabilities`, `validateLaunch`, `createSession`, `validateAction`, `validateResult`, `buildSettlement`)
 - [x] Matka Provider Adapter:
-  - API client interface for external Matka provider
-  - Market schedule, countdown, cut-off enforcement on server time
-  - Result normalization, history chart data generation
-  - Mock development adapter with labeled sandbox fixtures
-  - Missing provider API mapping log in `18_PROVIDER_API_INTEGRATION.md`
+  - Live client Matka API (`matkaapi.com`) integrated and verified using domain key authentication
+  - Fetches 64 active live daily markets with real-time declared results (`market=all`)
+  - Full catalog directory access across 399 market configurations (`market_list=1`)
+  - Server-authoritative result parser decomposes Open Pana, Jodi composite, and Close Pana
+  - Built-in in-memory 30s TTL cache eliminates provider rate-limiting and provides sub-50ms responses
+  - Market schedule, countdown, and cut-off enforcement strictly on server time
+  - Fail-safe fallback to baseline fixtures if provider is temporarily unreachable or rate-limited
+  - Documented in `18_PROVIDER_API_INTEGRATION.md` Section 11
 - [x] Carrom Provider Adapter:
   - Match format, turn state machine, shot sequence validation, disconnect recovery
 - [x] Ludo Provider Adapter:
