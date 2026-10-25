@@ -128,7 +128,7 @@ export default function AdminDashboardPage() {
           className="p-5 rounded-xl bg-[#242424] border border-white/10 hover:border-[#b45df0] space-y-2 group transition-all"
         >
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-sm">Crypto QR & Chain Watcher</h3>
+            <h3 className="font-bold text-white text-sm">Deposit & Crypto QR</h3>
             <QrCode className="w-5 h-5 text-[#b45df0] group-hover:scale-110 transition-transform" />
           </div>
           <p className="text-xs text-[#c4bfd0]">

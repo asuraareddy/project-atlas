@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { label: 'Platform Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Crypto QR & Watcher', href: '/admin/crypto-deposits', icon: QrCode },
+    { label: 'Deposit & Crypto QR', href: '/admin/crypto-deposits', icon: QrCode },
     { label: 'Withdrawal Approvals', href: '/admin/withdrawals', icon: ArrowUpRight },
     { label: 'Maker-Checker Queue', href: '/admin/maker-checker', icon: CheckSquare },
     { label: 'Finance & P&L', href: '/admin/finance', icon: DollarSign },

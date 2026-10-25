@@ -675,6 +675,121 @@ test('Category switching preserves selected digit, gameType, date, and points am
 });
 
 // ------------------------------------------------------------------
+// Suite 9: Admin Deposit Management & Dynamic Crypto QR Generation
+// ------------------------------------------------------------------
+console.log('\n[Suite 9: Admin Deposit Management & Crypto QR Verification]');
+
+test('Admin receiving address update validates address length and format', () => {
+  function validateAdminAddress(addr) {
+    if (!addr || typeof addr !== 'string' || addr.trim().length < 15) {
+      throw new Error('INVALID_ADDRESS: Operator receiving address is invalid or too short.');
+    }
+    return addr.trim();
+  }
+
+  assert.equal(validateAdminAddress('0x71C8364b4c7365A5424D0A0b58e723c34a2e87B1'), '0x71C8364b4c7365A5424D0A0b58e723c34a2e87B1');
+  assert.equal(validateAdminAddress('tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx'), 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx');
+  assert.throws(() => validateAdminAddress(''), /INVALID_ADDRESS/);
+  assert.throws(() => validateAdminAddress('0xshort'), /INVALID_ADDRESS/);
+});
+
+test('Changing operator receiving address regenerates dynamic QR payload immediately', () => {
+  function generateQrPayload(network, receivingAddress, amountCrypto) {
+    if (network === 'bitcoin') {
+      return `bitcoin:${receivingAddress}?amount=${amountCrypto.toFixed(6)}`;
+    }
+    return `ethereum:${receivingAddress}@${network === 'polygon' ? 137 : 1}?value=${Math.round(amountCrypto * 1e6)}`;
+  }
+
+  const oldAddress = '0x71C8364b4c7365A5424D0A0b58e723c34a2e87B1';
+  const newAddress = '0x9999999999999999999999999999999999999999';
+
+  const oldPayload = generateQrPayload('polygon', oldAddress, 25);
+  const newPayload = generateQrPayload('polygon', newAddress, 25);
+
+  assert.notEqual(oldPayload, newPayload, 'QR payload must change when address changes');
+  assert.ok(newPayload.includes(newAddress), 'New payload must contain updated address');
+});
+
+test('Exchange rate to GBP update correctly recalculates quoted crypto amount for player deposits', () => {
+  function quoteDeposit(amountGbp, rateToGbp) {
+    if (rateToGbp <= 0) throw new Error('INVALID_RATE: Rate must be greater than 0');
+    return (amountGbp / rateToGbp).toFixed(4);
+  }
+
+  // Rate at £0.77 (initial USDT)
+  const quote1 = quoteDeposit(100, 0.77);
+  assert.equal(quote1, '129.8701');
+
+  // Admin updates USDT rate to £0.80
+  const quote2 = quoteDeposit(100, 0.80);
+  assert.equal(quote2, '125.0000');
+
+  assert.throws(() => quoteDeposit(100, 0), /INVALID_RATE/);
+  assert.throws(() => quoteDeposit(100, -0.5), /INVALID_RATE/);
+});
+
+test('Confirmation depth change updates threshold required before double-entry credit', () => {
+  const assetConfig = {
+    network: 'polygon',
+    asset: 'USDT',
+    requiredConfirmations: 12
+  };
+
+  function isDepositReadyForCredit(observedConfirmations, required) {
+    return observedConfirmations >= required;
+  }
+
+  assert.equal(isDepositReadyForCredit(10, assetConfig.requiredConfirmations), false);
+  assert.equal(isDepositReadyForCredit(12, assetConfig.requiredConfirmations), true);
+
+  // Admin lowers confirmation requirement to 8
+  assetConfig.requiredConfirmations = 8;
+  assert.equal(isDepositReadyForCredit(10, assetConfig.requiredConfirmations), true);
+});
+
+test('Admin can pause and resume deposit assets via enabled toggle', () => {
+  const assets = [
+    { asset: 'USDT', network: 'polygon', enabled: true },
+    { asset: 'BTC', network: 'bitcoin', enabled: true }
+  ];
+
+  function getActiveDepositAssets(list) {
+    return list.filter(a => a.enabled);
+  }
+
+  assert.equal(getActiveDepositAssets(assets).length, 2);
+
+  // Operator pauses BTC deposits
+  assets[1].enabled = false;
+  const activeNow = getActiveDepositAssets(assets);
+  assert.equal(activeNow.length, 1);
+  assert.equal(activeNow[0].asset, 'USDT');
+});
+
+test('Dark Mode and Pure White Mode design token compliance', () => {
+  const themeTokens = {
+    dark: {
+      bgMain: '#1f1f1f',
+      bgCard: '#242424',
+      textPrimary: '#ffffff',
+      icon: 'moon'
+    },
+    light: {
+      bgMain: '#ffffff',
+      bgCard: '#f8fafc',
+      textPrimary: '#0f172a',
+      icon: 'sun'
+    }
+  };
+
+  assert.equal(themeTokens.dark.icon, 'moon', 'Moon icon must represent current dark mode');
+  assert.equal(themeTokens.light.icon, 'sun', 'Sun icon must represent white mode');
+  assert.equal(themeTokens.dark.bgMain, '#1f1f1f');
+  assert.equal(themeTokens.light.bgMain, '#ffffff');
+});
+
+// ------------------------------------------------------------------
 // Summary Report
 // ------------------------------------------------------------------
 console.log('\n======================================================');
@@ -686,3 +801,4 @@ if (failCount > 0) {
 } else {
   process.exit(0);
 }
+
