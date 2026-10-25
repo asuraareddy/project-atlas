@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export const viewport: Viewport = {
   themeColor: "#7e0ac2",
@@ -27,12 +28,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-full">
-      <body className="min-h-full flex flex-col bg-[#1f1f1f] text-white selection:bg-[#7e0ac2] selection:text-white">
-        <PwaRegister />
-        <Header />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
+    <html lang="en" className="dark h-full" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-[#1f1f1f] text-white selection:bg-[#7e0ac2] selection:text-white transition-colors duration-200">
+        <ThemeProvider>
+          <PwaRegister />
+          <Header />
+          <main className="flex-1 flex flex-col">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

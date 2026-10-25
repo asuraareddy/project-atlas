@@ -23,6 +23,7 @@ import {
   PattiCategory,
   validatePoints
 } from '@/domain/games/matka/patti-generator';
+import { ThemeToggle } from '@/components/theme/ThemeProvider';
 
 export interface SelectedPattiItem {
   id: string; // unique key: `${marketId}_${date}_${gameType}_${pattiNumber}`
@@ -292,6 +293,9 @@ export default function PattiParticipationSection({
               {activeMarket.status}
             </span>
           )}
+
+          {/* Quick Theme Toggle (Dark / Light) */}
+          <ThemeToggle />
         </div>
       </div>
 

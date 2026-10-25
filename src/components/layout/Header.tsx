@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShieldCheck, Wallet, User, LogIn, LayoutDashboard, ShieldAlert, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { ThemeToggle } from '@/components/theme/ThemeProvider';
 
 export function Header() {
   const pathname = usePathname();
@@ -102,7 +103,10 @@ export function Header() {
         </nav>
 
         {/* Actions & User State */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Dark / Light Mode Toggle */}
+          <ThemeToggle />
+
           {/* Admin Portal Quick Switch */}
           <Link
             href="/admin/dashboard"
