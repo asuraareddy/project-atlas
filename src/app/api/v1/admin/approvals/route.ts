@@ -12,7 +12,7 @@ const pendingApprovals: ApprovalRequest[] = [
     makerId: 'usr_player_01',
     checkerId: null,
     status: 'pending',
-    reason: 'High-value customer withdrawal exceeding automated limit (£50.00).',
+    reason: 'High-value customer withdrawal exceeding automated limit (50.00).',
     requestedPayload: { amountMinor: 5000, currency: 'GBP', destination: 'Sort 20-04-12 Acc 8912' },
     createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
   },

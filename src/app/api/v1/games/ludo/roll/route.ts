@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = LudoSessionStore.rollDice(sessionId, color);
+    const session = await LudoSessionStore.rollDice(sessionId, color);
     const validMoves = session.currentDiceRoll !== null
       ? LudoEngine.getValidMoves(session, session.currentDiceRoll)
       : [];

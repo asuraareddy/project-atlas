@@ -16,8 +16,8 @@ export class ClientCarromAdapter implements CarromProviderAdapter {
         roomId: 'crm_room_01',
         category: 'carrom',
         name: 'Novice Board (1v1)',
-        stakeMinor: 100, // £1.00
-        currency: 'GBP',
+        stakeMinor: 100, // 1.00 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 1,
         status: 'waiting',
@@ -27,8 +27,8 @@ export class ClientCarromAdapter implements CarromProviderAdapter {
         roomId: 'crm_room_02',
         category: 'carrom',
         name: 'Challenger Arena (1v1)',
-        stakeMinor: 500, // £5.00
-        currency: 'GBP',
+        stakeMinor: 500, // 5.00 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 2,
         status: 'in_progress',
@@ -38,8 +38,8 @@ export class ClientCarromAdapter implements CarromProviderAdapter {
         roomId: 'crm_room_03',
         category: 'carrom',
         name: 'Master Cup (2v2 Doubles)',
-        stakeMinor: 1000, // £10.00
-        currency: 'GBP',
+        stakeMinor: 1000, // 10.00 pts
+        currency: 'pts',
         maxPlayers: 4,
         currentPlayers: 3,
         status: 'waiting',
@@ -54,7 +54,7 @@ export class ClientCarromAdapter implements CarromProviderAdapter {
       category: 'carrom',
       name,
       stakeMinor,
-      currency: 'GBP',
+      currency: 'pts',
       maxPlayers: 2,
       currentPlayers: 1,
       status: 'waiting',

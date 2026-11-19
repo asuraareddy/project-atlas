@@ -9,6 +9,9 @@ import {
 
 interface LiveMarketItem {
   name: string;
+  open?: string;
+  jodi?: string;
+  close?: string;
   result?: string;
   date?: string;
   open_time?: string;
@@ -19,8 +22,16 @@ interface LiveMarketItem {
 }
 
 interface LiveApiResponse {
-  status: boolean;
-  message: string;
+  expiry?: string;
+  results?: {
+    status: boolean;
+    message: string;
+    data?: LiveMarketItem[];
+    error_code?: string;
+    retry_after?: number;
+  };
+  status?: boolean;
+  message?: string;
   count?: number;
   data?: LiveMarketItem[];
   error_code?: string;
@@ -37,7 +48,7 @@ interface PremierMarketConfig {
 
 /**
  * Authoritative Premier Market Configurations
- * Extracted directly from matkaapi.com market directory (market_list=1).
+ * Extracted directly from official market directories.
  * Used to ensure all major markets are represented with official schedules
  * and correct "Pending Result" status before their daily draw occurs.
  */
@@ -63,28 +74,31 @@ const PREMIER_MARKET_CATALOG: PremierMarketConfig[] = [
 ];
 
 /**
- * Client Matka API Adapter (matkaapi.com Live Integration)
+ * Client Matka API Adapter (sattaapi.com Live Integration)
  * Strictly matches market IDs and authoritative API results.
  * Displays "Pending Result" when results are undeclared.
  * Zero hardcoded or fabricated numbers.
  */
 export class ClientMatkaAdapter implements MatkaProviderAdapter {
   private apiBaseUrl: string;
+  private apiKey: string;
   private domainKey: string;
   private domain: string;
   private isLiveConfigured: boolean;
 
-  // In-memory cache to strictly avoid matkaapi.com rate limits (min interval 5-10s)
+  // In-memory cache to strictly avoid provider rate limits (min interval 5-10s)
   private cachedMarkets: MarketSummary[] | null = null;
   private lastFetchTime: number = 0;
   private readonly cacheTtlMs: number = 30000; // 30 seconds
 
   constructor() {
-    this.apiBaseUrl = process.env.MATKA_API_URL || 'https://www.matkaapi.com/mapi';
+    this.apiBaseUrl = process.env.MATKA_API_URL || 'https://sattaapi.com/wp-json/satta/v1/results';
+    this.apiKey = process.env.MATKA_API_KEY || '';
     this.domainKey = process.env.MATKA_DOMAIN_KEY || '';
     this.domain = process.env.MATKA_DOMAIN || '';
     this.isLiveConfigured =
       process.env.ENABLE_LIVE_MATKA_PROVIDER === 'true' &&
+      !!this.apiKey &&
       !!this.domainKey &&
       !!this.domain;
   }
@@ -135,24 +149,56 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
   }
 
   /**
-   * Calls matkaapi.com endpoints with trial/production authentication.
+   * Cleans open time string
+   */
+  private cleanOpenTime(timeStr?: string, defaultVal: string = '11:00 AM'): string {
+    if (!timeStr || !timeStr.trim()) return defaultVal;
+    const matches = timeStr.trim().match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)\b/gi);
+    if (!matches || matches.length === 0) return timeStr.trim();
+    return matches[0].trim();
+  }
+
+  /**
+   * Cleans close time string, selecting the last timestamp if multiple exist
+   */
+  private cleanCloseTime(timeStr?: string, defaultVal: string = '01:00 PM'): string {
+    if (!timeStr || !timeStr.trim()) return defaultVal;
+    const matches = timeStr.trim().match(/\b\d{1,2}:\d{2}\s*(?:AM|PM)\b/gi);
+    if (!matches || matches.length === 0) return timeStr.trim();
+    return matches[matches.length - 1].trim();
+  }
+
+  /**
+   * Calls sattaapi.com endpoints with secure backend credentials.
    * Maps every market uniquely and parses exact results.
    */
   private async fetchLiveMarkets(): Promise<MarketSummary[]> {
-    const url = `${this.apiBaseUrl}/market_api.php?market=all&domain_key=${encodeURIComponent(
-      this.domainKey
-    )}&domain=${encodeURIComponent(this.domain)}`;
+    const payload = {
+      api_key: this.apiKey,
+      domain_key: this.domainKey,
+      domain: this.domain
+    };
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        Accept: 'application/json'
-      }
-    });
-    clearTimeout(timeout);
+    let res: Response;
+    try {
+      res = await fetch(this.apiBaseUrl, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'ProjectAtlas/1.0'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      throw new Error(`Provider connection failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       throw new Error(`HTTP_${res.status}: Failed to reach Matka API`);
@@ -160,20 +206,23 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
 
     const json = (await res.json()) as LiveApiResponse;
 
-    if (!json.status && json.error_code === 'rate_limited') {
-      console.warn(`[ClientMatkaAdapter] Rate limited by matkaapi.com. Retry in ${json.retry_after || 5}s.`);
+    const resultsContainer = json.results || json;
+    if (resultsContainer.status === false && resultsContainer.error_code === 'rate_limited') {
+      console.warn(`[ClientMatkaAdapter] Rate limited by provider. Retry in ${resultsContainer.retry_after || 5}s.`);
       if (this.cachedMarkets) return this.cachedMarkets.map(m => ({ ...m, isStale: true }));
       return this.getTruthfulPendingCatalog();
     }
 
-    if (!json.data || !Array.isArray(json.data)) {
-      throw new Error(json.message || 'Malformed data from Matka API');
+    const dataList = (resultsContainer.data || json.data) as LiveMarketItem[];
+
+    if (!dataList || !Array.isArray(dataList)) {
+      throw new Error(resultsContainer.message || json.message || 'Malformed data from Matka API');
     }
 
     const now = new Date();
     // Index live results by exact normalized uppercase market name
     const liveResultsMap = new Map<string, LiveMarketItem>();
-    for (const item of json.data) {
+    for (const item of dataList) {
       if (item.name && item.name.trim() !== '') {
         liveResultsMap.set(item.name.trim().toUpperCase(), item);
       }
@@ -182,28 +231,42 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
     const processedMarketNames = new Set<string>();
     const markets: MarketSummary[] = [];
 
+    const formatIsoDate = (dateStr?: string) => {
+      if (!dateStr || !dateStr.trim()) return now.toISOString();
+      try {
+        const parsed = new Date(dateStr.replace(' ', 'T') + '+05:30');
+        return isNaN(parsed.getTime()) ? now.toISOString() : parsed.toISOString();
+      } catch {
+        return now.toISOString();
+      }
+    };
+
     // 1. Process Premier Markets First (ensuring the most played markets are always available)
     for (const config of PREMIER_MARKET_CATALOG) {
       const upperName = config.name.toUpperCase();
       processedMarketNames.add(upperName);
       const liveItem = liveResultsMap.get(upperName);
 
-      const parsedResult = this.parseResult(liveItem?.result);
-      const status = this.determineMarketStatus(config.opensAt, config.closesAt, parsedResult.resultState);
-      const cutoffTime = this.calculateCutoff(config.closesAt);
+      const opensAt = this.cleanOpenTime(liveItem?.open_time, config.opensAt);
+      const closesAt = this.cleanCloseTime(liveItem?.close_time, config.closesAt);
+
+      const rawResultStr = liveItem?.result || (liveItem?.open ? `${liveItem.open}-${liveItem.jodi || '**'}-${liveItem.close || ''}` : '');
+      const parsedResult = this.parseResult(rawResultStr);
+      const status = this.determineMarketStatus(opensAt, closesAt, parsedResult.resultState);
+      const cutoffTime = this.calculateCutoff(closesAt);
 
       markets.push({
         id: this.generateMarketId(config.name),
         providerRef: {
-          providerId: 'prov_matkaapi_com',
-          externalId: config.name, // Exact provider name
-          externalVersion: '2.0'
+          providerId: 'prov_sattaapi_com',
+          externalId: liveItem?.name || config.name,
+          externalVersion: '1.0'
         },
         name: config.name,
         status,
         timezone: 'Asia/Kolkata',
-        opensAt: config.opensAt,
-        closesAt: config.closesAt,
+        opensAt,
+        closesAt,
         cutoffAt: cutoffTime,
         lastUpdatedAt: now.toISOString(),
         capabilities: ['single_digit', 'jodi_digit', 'single_pana', 'double_pana', 'chart'],
@@ -211,35 +274,36 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
           openPana: parsedResult.openPana,
           jodi: parsedResult.jodi,
           closePana: parsedResult.closePana,
-          rawResult: liveItem?.result || '',
+          rawResult: rawResultStr,
           displayResult: parsedResult.displayResult,
           resultState: parsedResult.resultState,
           status: parsedResult.status,
-          publishedAt: liveItem?.date ? `${liveItem.date}T12:00:00Z` : now.toISOString()
+          publishedAt: formatIsoDate(liveItem?.date)
         }
       });
     }
 
-    // 2. Process all other active markets from market=all
-    for (const item of json.data) {
+    // 2. Process all other active markets from provider API
+    for (const item of dataList) {
       const rawName = item.name?.trim();
       if (!rawName) continue;
       const upperName = rawName.toUpperCase();
       if (processedMarketNames.has(upperName)) continue; // Already added in premier
       processedMarketNames.add(upperName);
 
-      const parsedResult = this.parseResult(item.result);
-      const opensAt = item.open_time && item.open_time.trim() !== '' ? item.open_time : '11:00 AM';
-      const closesAt = item.close_time && item.close_time.trim() !== '' ? item.close_time : '01:00 PM';
+      const opensAt = this.cleanOpenTime(item.open_time, '11:00 AM');
+      const closesAt = this.cleanCloseTime(item.close_time, '01:00 PM');
+      const rawResultStr = item.result || (item.open ? `${item.open}-${item.jodi || '**'}-${item.close || ''}` : '');
+      const parsedResult = this.parseResult(rawResultStr);
       const status = this.determineMarketStatus(opensAt, closesAt, parsedResult.resultState);
       const cutoffTime = this.calculateCutoff(closesAt);
 
       markets.push({
         id: this.generateMarketId(rawName),
         providerRef: {
-          providerId: 'prov_matkaapi_com',
-          externalId: rawName, // Exact provider name
-          externalVersion: '2.0'
+          providerId: 'prov_sattaapi_com',
+          externalId: rawName,
+          externalVersion: '1.0'
         },
         name: rawName,
         status,
@@ -253,11 +317,11 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
           openPana: parsedResult.openPana,
           jodi: parsedResult.jodi,
           closePana: parsedResult.closePana,
-          rawResult: item.result || '',
+          rawResult: rawResultStr,
           displayResult: parsedResult.displayResult,
           resultState: parsedResult.resultState,
           status: parsedResult.status,
-          publishedAt: item.date ? `${item.date}T12:00:00Z` : now.toISOString()
+          publishedAt: formatIsoDate(item.date)
         }
       });
     }
@@ -532,7 +596,7 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
       currency: command.currency,
       status: 'accepted',
       acceptedAt: new Date().toISOString(),
-      providerReference: `prov_matkaapi_${command.idempotencyKey.substring(0, 12)}`,
+      providerReference: `prov_sattaapi_${command.idempotencyKey.substring(0, 12)}`,
       gameType: command.gameType,
       date: command.date,
       entriesCount: command.entries ? command.entries.length : 1,
@@ -583,7 +647,7 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
       markets.push({
         id: this.generateMarketId(config.name),
         providerRef: {
-          providerId: 'prov_matkaapi_com',
+          providerId: 'prov_sattaapi_com',
           externalId: config.name,
           externalVersion: '2.0'
         },
@@ -620,7 +684,7 @@ export class ClientMatkaAdapter implements MatkaProviderAdapter {
       markets.push({
         id: this.generateMarketId(snapName),
         providerRef: {
-          providerId: 'prov_matkaapi_com',
+          providerId: 'prov_sattaapi_com',
           externalId: snapName,
           externalVersion: '2.0'
         },

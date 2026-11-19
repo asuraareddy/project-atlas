@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { 
-  CheckSquare, ShieldCheck, XCircle, AlertCircle, 
-  CheckCircle2, RefreshCw, UserCheck, FileText, ArrowRight 
+  CheckSquare, AlertCircle, 
+  CheckCircle2, RefreshCw
 } from 'lucide-react';
 import { ApprovalRequest } from '@/domain/rbac/types';
 
@@ -59,52 +58,52 @@ export default function AdminMakerCheckerPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <CheckSquare className="w-8 h-8 text-[#10b981]" />
-            <span>Maker-Checker Dual Control Queue</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#191919] tracking-tight flex items-center gap-2.5">
+            <CheckSquare className="w-6 h-6 text-[#1FAE5B]" />
+            <span>Maker-checker dual control queue</span>
           </h1>
-          <p className="text-xs text-[#c4bfd0] mt-1">
+          <p className="text-xs text-[#6F6F6F] mt-1">
             Enforces segregation of duties per Document 06. Self-approval is strictly prohibited on the server.
           </p>
         </div>
 
         <button
           onClick={fetchApprovals}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#242424] border border-white/10 text-xs font-medium text-white hover:border-[#b45df0] transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[rgba(0,0,0,0.12)] text-xs font-medium text-[#191919] hover:bg-[#F8F8F8] transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#b45df0] ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Queue</span>
+          <RefreshCw className={`w-3.5 h-3.5 text-[#317CFF] ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh queue</span>
         </button>
       </div>
 
       {feedback && (
-        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center gap-3 ${
+        <div className={`p-4 rounded-xl text-xs font-medium flex items-center gap-3 ${
           feedback.startsWith('REJECTED')
-            ? 'bg-[#ff5a7a]/20 text-[#ff5a7a] border border-[#ff5a7a]/40'
-            : 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40'
+            ? 'bg-[#E5484D]/10 text-[#E5484D] border border-[#E5484D]/20'
+            : 'bg-[#1FAE5B]/10 text-[#1FAE5B] border border-[#1FAE5B]/20'
         }`}>
-          {feedback.startsWith('REJECTED') ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+          {feedback.startsWith('REJECTED') ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
           <span>{feedback}</span>
         </div>
       )}
 
       {/* Acting Checker Identity Selector */}
-      <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+      <div className="p-4 rounded-xl bg-white border border-[rgba(0,0,0,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
         <div>
-          <span className="text-[#c4bfd0] block font-semibold">Active Authorized Checker Identity:</span>
-          <p className="text-white font-mono text-sm mt-0.5">Current Checker: <strong className="text-[#b45df0]">{checkerId}</strong></p>
+          <span className="text-[#6F6F6F] block font-medium">Active authorized checker identity:</span>
+          <p className="text-[#191919] font-mono text-sm mt-0.5">Current checker: <strong className="text-[#317CFF]">{checkerId}</strong></p>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-[#c4bfd0]">Switch Checker:</label>
+          <label className="text-[#6F6F6F]">Switch checker:</label>
           <select
             value={checkerId}
             onChange={(e) => setCheckerId(e.target.value)}
-            className="bg-[#1f1f1f] text-white border border-white/10 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-[#b45df0]"
+            className="bg-white text-[#191919] border border-[rgba(0,0,0,0.12)] rounded-full px-3.5 py-1.5 font-mono text-xs focus:outline-none focus:border-[#317CFF]"
           >
             <option value="usr_fin_mgr_01">usr_fin_mgr_01 (Finance Manager)</option>
             <option value="usr_operator_admin_01">usr_operator_admin_01 (Operator Admin)</option>
@@ -115,35 +114,35 @@ export default function AdminMakerCheckerPage() {
       </div>
 
       {/* Approvals Table */}
-      <div className="p-6 rounded-2xl bg-[#242424] border border-white/10 space-y-4">
-        <h2 className="text-lg font-bold text-white">Pending Privileged Approvals</h2>
+      <div className="p-6 rounded-2xl bg-white border border-[rgba(0,0,0,0.08)] space-y-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+        <h2 className="text-base font-semibold text-[#191919]">Pending privileged approvals</h2>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead>
-              <tr className="bg-[#1f1f1f] text-[#c4bfd0] border-b border-white/10">
-                <th className="p-3">Action Type</th>
-                <th className="p-3">Resource Target</th>
-                <th className="p-3">Maker (Requester)</th>
-                <th className="p-3">Reason / Context</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Decision</th>
+              <tr className="bg-[#F8F8F8] text-[#6F6F6F] border-b border-[rgba(0,0,0,0.08)]">
+                <th className="p-3 font-medium">Action type</th>
+                <th className="p-3 font-medium">Resource target</th>
+                <th className="p-3 font-medium">Maker (Requester)</th>
+                <th className="p-3 font-medium">Reason / Context</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 text-right font-medium">Decision</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[rgba(0,0,0,0.06)]">
               {approvals.map((req) => (
-                <tr key={req.id} className="hover:bg-white/5">
-                  <td className="p-3 font-bold text-[#b45df0]">{req.actionType}</td>
-                  <td className="p-3 text-white font-semibold">{req.resourceId}</td>
-                  <td className="p-3 text-[#c4bfd0]">{req.makerId}</td>
-                  <td className="p-3 text-[#c4bfd0] max-w-xs">{req.reason}</td>
+                <tr key={req.id} className="hover:bg-[#F8F8F8] transition-colors">
+                  <td className="p-3 font-semibold text-[#317CFF]">{req.actionType}</td>
+                  <td className="p-3 text-[#191919] font-medium">{req.resourceId}</td>
+                  <td className="p-3 text-[#6F6F6F]">{req.makerId}</td>
+                  <td className="p-3 text-[#6F6F6F] max-w-xs">{req.reason}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
                       req.status === 'approved'
-                        ? 'bg-[#10b981]/20 text-[#10b981]'
+                        ? 'bg-[#1FAE5B]/10 text-[#1FAE5B]'
                         : req.status === 'rejected'
-                        ? 'bg-[#ff5a7a]/20 text-[#ff5a7a]'
-                        : 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                        ? 'bg-[#E5484D]/10 text-[#E5484D]'
+                        : 'bg-[#F59F00]/10 text-[#B26A00]'
                     }`}>
                       {req.status}
                     </span>
@@ -153,19 +152,19 @@ export default function AdminMakerCheckerPage() {
                       <>
                         <button
                           onClick={() => handleDecision(req.id, 'APPROVED')}
-                          className="px-3 py-1.5 rounded-lg bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-[11px] shadow-sm"
+                          className="px-3 py-1 rounded-full bg-[#1FAE5B] hover:bg-[#1FAE5B]/90 text-white font-medium text-[11px] transition-all"
                         >
                           Approve
                         </button>
                         <button
                           onClick={() => handleDecision(req.id, 'REJECTED')}
-                          className="px-3 py-1.5 rounded-lg bg-[#ff5a7a] hover:bg-[#ff5a7a]/90 text-white font-bold text-[11px] shadow-sm"
+                          className="px-3 py-1 rounded-full bg-[#E5484D] hover:bg-[#E5484D]/90 text-white font-medium text-[11px] transition-all"
                         >
                           Reject
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10px] text-[#9c9aa8]">Decided by {req.checkerId}</span>
+                      <span className="text-[10px] text-[#6F6F6F]">Decided by {req.checkerId}</span>
                     )}
                   </td>
                 </tr>

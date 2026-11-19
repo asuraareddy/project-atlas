@@ -16,8 +16,8 @@ export class ClientLudoAdapter implements LudoProviderAdapter {
         roomId: 'ludo_quick_01',
         category: 'ludo',
         name: 'Quick Battle (2 Players)',
-        stakeMinor: 200, // £2.00
-        currency: 'GBP',
+        stakeMinor: 200, // 2.00 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 1,
         status: 'waiting',
@@ -27,8 +27,8 @@ export class ClientLudoAdapter implements LudoProviderAdapter {
         roomId: 'ludo_quad_02',
         category: 'ludo',
         name: 'Grand 4-Player Circuit',
-        stakeMinor: 500, // £5.00
-        currency: 'GBP',
+        stakeMinor: 500, // 5.00 pts
+        currency: 'pts',
         maxPlayers: 4,
         currentPlayers: 2,
         status: 'waiting',
@@ -38,8 +38,8 @@ export class ClientLudoAdapter implements LudoProviderAdapter {
         roomId: 'ludo_pro_03',
         category: 'ludo',
         name: 'High Roller Arena',
-        stakeMinor: 2500, // £25.00
-        currency: 'GBP',
+        stakeMinor: 2500, // 25.00 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 2,
         status: 'in_progress',
@@ -54,7 +54,7 @@ export class ClientLudoAdapter implements LudoProviderAdapter {
       category: 'ludo',
       name,
       stakeMinor,
-      currency: 'GBP',
+      currency: 'pts',
       maxPlayers: 4,
       currentPlayers: 1,
       status: 'waiting',

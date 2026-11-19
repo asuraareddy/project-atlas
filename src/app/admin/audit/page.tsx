@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { FileText, ShieldCheck, Search, Filter } from 'lucide-react';
+import { FileText, ShieldCheck } from 'lucide-react';
 
 export default function AdminAuditPage() {
   const [auditLogs] = useState([
@@ -53,48 +52,48 @@ export default function AdminAuditPage() {
   ]);
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <FileText className="w-8 h-8 text-[#b45df0]" />
-          <span>Central Immutable Audit Log</span>
+        <h1 className="text-xl sm:text-2xl font-semibold text-[#191919] tracking-tight flex items-center gap-2.5">
+          <FileText className="w-6 h-6 text-[#317CFF]" />
+          <span>Central immutable audit log</span>
         </h1>
-        <p className="text-xs text-[#c4bfd0] mt-1">
+        <p className="text-xs text-[#6F6F6F] mt-1">
           Append-only operational audit trail per Document 03 FR-AUD-001. All privileged events capture reason and correlation.
         </p>
       </div>
 
-      <div className="p-6 rounded-2xl bg-[#242424] border border-white/10 space-y-4">
+      <div className="p-6 rounded-2xl bg-white border border-[rgba(0,0,0,0.08)] space-y-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">Privileged Event History</h2>
-          <span className="text-xs text-[#10b981] font-semibold flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> Append-Only WORM Storage Policy
+          <h2 className="text-base font-semibold text-[#191919]">Privileged event history</h2>
+          <span className="text-xs text-[#1FAE5B] font-medium flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" /> Append-only WORM storage policy
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead>
-              <tr className="bg-[#1f1f1f] text-[#c4bfd0] border-b border-white/10">
-                <th className="p-3">Event ID</th>
-                <th className="p-3">Timestamp (UTC)</th>
-                <th className="p-3">Actor</th>
-                <th className="p-3">Action</th>
-                <th className="p-3">Target Resource</th>
-                <th className="p-3">Reason / Audit Context</th>
-                <th className="p-3 text-right">Correlation ID</th>
+              <tr className="bg-[#F8F8F8] text-[#6F6F6F] border-b border-[rgba(0,0,0,0.08)]">
+                <th className="p-3 font-medium">Event ID</th>
+                <th className="p-3 font-medium">Timestamp (UTC)</th>
+                <th className="p-3 font-medium">Actor</th>
+                <th className="p-3 font-medium">Action</th>
+                <th className="p-3 font-medium">Target resource</th>
+                <th className="p-3 font-medium">Reason / Audit context</th>
+                <th className="p-3 text-right font-medium">Correlation ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[rgba(0,0,0,0.06)]">
               {auditLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-white/5">
-                  <td className="p-3 font-bold text-white">{log.id}</td>
-                  <td className="p-3 text-[#c4bfd0]">{log.createdAt}</td>
-                  <td className="p-3 text-[#10b981] font-bold">{log.actorId}</td>
-                  <td className="p-3 text-[#b45df0] font-bold">{log.action}</td>
-                  <td className="p-3 text-white">{log.resourceId}</td>
-                  <td className="p-3 text-[#c4bfd0] max-w-xs">{log.reason}</td>
-                  <td className="p-3 text-right text-[10px] text-[#9c9aa8]">{log.correlationId}</td>
+                <tr key={log.id} className="hover:bg-[#F8F8F8] transition-colors">
+                  <td className="p-3 font-semibold text-[#191919]">{log.id}</td>
+                  <td className="p-3 text-[#6F6F6F]">{log.createdAt}</td>
+                  <td className="p-3 text-[#1FAE5B] font-medium">{log.actorId}</td>
+                  <td className="p-3 text-[#317CFF] font-medium">{log.action}</td>
+                  <td className="p-3 text-[#191919]">{log.resourceId}</td>
+                  <td className="p-3 text-[#6F6F6F] max-w-xs">{log.reason}</td>
+                  <td className="p-3 text-right text-[10px] text-[#B8B8B8]">{log.correlationId}</td>
                 </tr>
               ))}
             </tbody>

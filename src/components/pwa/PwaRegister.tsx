@@ -7,18 +7,34 @@ export function PwaRegister() {
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    // 1. Service Worker Registration
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .then((registration) => {
-            console.log('Atlas ServiceWorker registered with scope:', registration.scope);
-          })
-          .catch((err) => {
-            console.warn('Atlas ServiceWorker registration failed:', err);
+    // 1. Service Worker Management
+    if ('serviceWorker' in navigator) {
+      if (process.env.NODE_ENV === 'production') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('Atlas ServiceWorker registered with scope:', registration.scope);
+            })
+            .catch((err) => {
+              console.warn('Atlas ServiceWorker registration failed:', err);
+            });
+        });
+      } else {
+        // In local development, automatically unregister any stale service worker and clear chunk caches
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister().catch(() => {});
+          }
+        });
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            for (const name of names) {
+              caches.delete(name).catch(() => {});
+            }
           });
-      });
+        }
+      }
     }
 
     // 2. Connectivity Listeners

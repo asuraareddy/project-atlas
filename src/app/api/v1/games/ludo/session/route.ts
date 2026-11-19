@@ -7,8 +7,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || 'vs_ai';
     const playerCount = body.playerCount === 2 ? 2 : 4;
+    const stakeMinor = typeof body.stakeMinor === 'number' ? body.stakeMinor : 200;
+    const rakePercentage = typeof body.rakePercentage === 'number' ? body.rakePercentage : 10;
+    const isRealMoney = Boolean(body.isRealMoney);
+    const userId = body.userId || 'usr_player_01';
 
-    const session = LudoSessionStore.createSession(mode, playerCount);
+    const session = await LudoSessionStore.createSession(
+      mode,
+      playerCount,
+      { stakeMinor, rakePercentage, isRealMoney },
+      userId
+    );
+
     const validMoves = session.currentDiceRoll !== null
       ? LudoEngine.getValidMoves(session, session.currentDiceRoll)
       : [];
@@ -64,6 +74,32 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json(
       { error: { code: 'SESSION_FETCH_ERROR', message: err.message } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const sessionId = url.searchParams.get('sessionId');
+    const reason = url.searchParams.get('reason') || 'Player aborted matchmaking';
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: { code: 'MISSING_PARAM', message: 'sessionId is required' } },
+        { status: 400 }
+      );
+    }
+
+    const session = await LudoSessionStore.cancelSession(sessionId, reason);
+    return NextResponse.json({
+      success: true,
+      data: { session }
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: { code: 'SESSION_CANCEL_ERROR', message: err.message } },
       { status: 500 }
     );
   }

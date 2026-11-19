@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
-  ShieldAlert, Clock, Ban, CheckCircle2, AlertTriangle, 
-  HelpCircle, Lock, Calendar, RefreshCw 
+  ShieldAlert, Clock, Ban, CheckCircle2, Lock
 } from 'lucide-react';
 
 export default function SaferGamblingPage() {
@@ -26,7 +25,7 @@ export default function SaferGamblingPage() {
         })
       });
       if (res.ok) {
-        setFeedback('Daily deposit limit set to £' + parseFloat(dailyLimit).toFixed(2) + '. Enforced immediately on server.');
+        setFeedback('Daily deposit limit set to ' + parseFloat(dailyLimit).toFixed(2) + ' PTS. Enforced immediately on server.');
       }
     } catch (e: any) {
       setFeedback('Error: ' + e.message);
@@ -55,35 +54,35 @@ export default function SaferGamblingPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8 bg-[#F8F8F8] text-[#191919]">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 text-xs text-[#c4bfd0] mb-1">
-          <Link href="/" className="hover:text-white">Lobby</Link>
+        <div className="flex items-center gap-2 text-xs text-[#6F6F6F] mb-1">
+          <Link href="/" className="hover:text-[#191919]">Lobby</Link>
           <span>/</span>
-          <span className="text-[#ff5a7a] font-semibold">Safer Gambling Hub</span>
+          <span className="text-[#317CFF] font-medium">Safer Gambling Hub</span>
         </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <ShieldAlert className="w-8 h-8 text-[#ff5a7a]" />
+        <h1 className="text-3xl font-normal text-[#191919] tracking-tight flex items-center gap-3">
+          <ShieldAlert className="w-7 h-7 text-[#E5484D]" />
           <span>Safer Gambling & Player Protection</span>
         </h1>
-        <p className="text-xs text-[#c4bfd0] mt-1">
+        <p className="text-xs text-[#6F6F6F] mt-1 font-normal">
           Keep your gaming enjoyable and in control. Set financial limits, session reality checks, or self-exclude.
         </p>
       </div>
 
       {feedback && (
-        <div className="p-4 rounded-xl bg-[#10b981]/20 border border-[#10b981]/40 text-white flex items-center gap-3 animate-fade-in text-xs font-semibold">
-          <CheckCircle2 className="w-5 h-5 text-[#10b981] shrink-0" />
+        <div className="p-4 rounded-[10px] bg-[#1FAE5B]/10 border border-[#1FAE5B]/20 text-[#1FAE5B] flex items-center gap-3 animate-fade-in text-xs font-normal">
+          <CheckCircle2 className="w-4 h-4 text-[#1FAE5B] shrink-0" />
           <span>{feedback}</span>
         </div>
       )}
 
-      {/* UK Helpline Banner */}
-      <div className="p-4 rounded-xl bg-[#ff5a7a]/10 border border-[#ff5a7a]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Support Banner */}
+      <div className="p-4 rounded-[10px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 className="font-bold text-white text-sm">Need immediate, confidential support?</h3>
-          <p className="text-xs text-[#c4bfd0] mt-0.5">
+          <h3 className="font-medium text-[#191919] text-sm">Need immediate, confidential support?</h3>
+          <p className="text-xs text-[#6F6F6F] mt-0.5">
             National Gambling Helpline is available 24/7 on <strong>0808 8020 133</strong> or live chat at BeGambleAware.org.
           </p>
         </div>
@@ -91,7 +90,7 @@ export default function SaferGamblingPage() {
           href="https://www.begambleaware.org"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2 rounded-full bg-[#ff5a7a] hover:bg-[#ff5a7a]/90 text-white text-xs font-semibold whitespace-nowrap transition-colors"
+          className="px-4 py-2 rounded-full bg-[#191919] hover:bg-[#333333] text-white text-xs font-normal whitespace-nowrap transition-colors"
         >
           Visit BeGambleAware
         </a>
@@ -99,17 +98,17 @@ export default function SaferGamblingPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Deposit Limits */}
-        <div className="p-6 rounded-2xl bg-[#242424] border border-white/10 space-y-4">
-          <div className="flex items-center gap-2 text-white font-bold">
-            <Lock className="w-5 h-5 text-[#b45df0]" />
+        <div className="p-6 rounded-[10px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex items-center gap-2 text-[#191919] font-medium">
+            <Lock className="w-4 h-4 text-[#317CFF]" />
             <span>Deposit Limits</span>
           </div>
-          <p className="text-xs text-[#c4bfd0]">
+          <p className="text-xs text-[#6F6F6F] leading-relaxed">
             Cap the maximum funds you can deposit within a 24-hour rolling period. Reductions take effect immediately; increases require a cooling-off period.
           </p>
-          <form onSubmit={handleUpdateLimit} className="space-y-4">
+          <form onSubmit={handleUpdateLimit} className="space-y-4 text-xs">
             <div>
-              <label className="text-xs text-[#c4bfd0] block mb-1">Daily Limit (GBP £)</label>
+              <label className="text-[#6F6F6F] block mb-1">Daily Limit (PTS)</label>
               <input
                 type="number"
                 min="5"
@@ -117,12 +116,12 @@ export default function SaferGamblingPage() {
                 step="5"
                 value={dailyLimit}
                 onChange={(e) => setDailyLimit(e.target.value)}
-                className="w-full bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white font-mono focus:border-[#b45df0] focus:outline-none"
+                className="w-full bg-[#F8F8F8] border border-[rgba(0,0,0,0.08)] rounded-[10px] p-2 text-sm text-[#191919] font-mono focus:border-[#191919] focus:outline-none"
               />
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 rounded-full text-xs font-semibold text-white bg-[#7e0ac2] hover:bg-[#9a13e6] shadow-md shadow-[#7e0ac2]/40"
+              className="w-full py-2.5 rounded-full text-xs font-normal text-white bg-[#191919] hover:bg-[#333333] shadow-sm transition-all"
             >
               Update Daily Limit
             </button>
@@ -130,21 +129,21 @@ export default function SaferGamblingPage() {
         </div>
 
         {/* Reality Checks & Session Limits */}
-        <div className="p-6 rounded-2xl bg-[#242424] border border-white/10 space-y-4">
-          <div className="flex items-center gap-2 text-white font-bold">
-            <Clock className="w-5 h-5 text-[#b45df0]" />
+        <div className="p-6 rounded-[10px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
+          <div className="flex items-center gap-2 text-[#191919] font-medium">
+            <Clock className="w-4 h-4 text-[#317CFF]" />
             <span>Session Reality Check</span>
           </div>
-          <p className="text-xs text-[#c4bfd0]">
+          <p className="text-xs text-[#6F6F6F] leading-relaxed">
             Receive an on-screen prompt showing time elapsed and net gaming performance during your active sessions.
           </p>
-          <div className="space-y-4">
+          <div className="space-y-4 text-xs">
             <div>
-              <label className="text-xs text-[#c4bfd0] block mb-1">Alert Interval</label>
+              <label className="text-[#6F6F6F] block mb-1">Alert Interval</label>
               <select
                 value={sessionDuration}
                 onChange={(e) => setSessionDuration(e.target.value)}
-                className="w-full bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-[#b45df0] focus:outline-none"
+                className="w-full bg-[#F8F8F8] border border-[rgba(0,0,0,0.08)] rounded-[10px] p-2 text-sm text-[#191919] focus:border-[#191919] focus:outline-none"
               >
                 <option value="30">Every 30 Minutes</option>
                 <option value="60">Every 60 Minutes (Default)</option>
@@ -154,7 +153,7 @@ export default function SaferGamblingPage() {
             <button
               type="button"
               onClick={() => setFeedback(`Session reality check set to every ${sessionDuration} minutes.`)}
-              className="w-full py-2.5 rounded-full text-xs font-semibold text-white bg-[#2a2a2a] hover:bg-[#333] border border-white/10"
+              className="w-full py-2.5 rounded-full text-xs font-normal text-[#191919] bg-[#F8F8F8] hover:bg-[#EEEEEE] border border-[rgba(0,0,0,0.08)] transition-all"
             >
               Save Reality Check
             </button>
@@ -163,19 +162,19 @@ export default function SaferGamblingPage() {
       </div>
 
       {/* Self-Exclusion Section */}
-      <div className="p-6 rounded-2xl bg-[#242424] border border-[#ff5a7a]/40 space-y-4">
-        <div className="flex items-center gap-2 text-[#ff5a7a] font-bold">
-          <Ban className="w-5 h-5" />
-          <span>Self-Exclusion (GAMSTOP Compatible Policy)</span>
+      <div className="p-6 rounded-[10px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-4">
+        <div className="flex items-center gap-2 text-[#E5484D] font-medium">
+          <Ban className="w-4 h-4" />
+          <span>Self-Exclusion Policy</span>
         </div>
-        <p className="text-xs text-[#c4bfd0] leading-relaxed">
-          If you feel you are losing control of your gambling, you can self-exclude. Self-exclusion will immediately lock your account, terminate open gaming sessions, and block all deposit and wagering activities across the entire platform.
+        <p className="text-xs text-[#6F6F6F] leading-relaxed">
+          If you feel you are losing control of your gaming, you can self-exclude. Self-exclusion will immediately lock your account, terminate open gaming sessions, and block all deposit and wagering activities across the entire platform.
         </p>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 text-xs">
           <select
             value={exclusionPeriod}
             onChange={(e) => setExclusionPeriod(e.target.value)}
-            className="w-full sm:w-64 bg-[#1f1f1f] border border-white/10 rounded-lg p-2.5 text-sm text-white focus:border-[#ff5a7a] focus:outline-none"
+            className="w-full sm:w-64 bg-[#F8F8F8] border border-[rgba(0,0,0,0.08)] rounded-[10px] p-2 text-sm text-[#191919] focus:border-[#191919] focus:outline-none"
           >
             <option value="6_months">6 Months</option>
             <option value="1_year">1 Year</option>
@@ -184,7 +183,7 @@ export default function SaferGamblingPage() {
           <button
             type="button"
             onClick={handleSelfExclude}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-full text-xs font-bold text-white bg-[#ff5a7a] hover:bg-[#ff5a7a]/90 shadow-lg shadow-[#ff5a7a]/30 transition-all"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-full text-xs font-normal text-white bg-[#E5484D] hover:bg-[#D4373C] shadow-sm transition-all"
           >
             Activate Self-Exclusion
           </button>

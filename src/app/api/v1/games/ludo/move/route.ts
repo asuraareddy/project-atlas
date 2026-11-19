@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = LudoSessionStore.moveToken(sessionId, color, Number(tokenId));
+    const session = await LudoSessionStore.moveToken(sessionId, color, Number(tokenId));
     const validMoves = session.currentDiceRoll !== null
       ? LudoEngine.getValidMoves(session, session.currentDiceRoll)
       : [];

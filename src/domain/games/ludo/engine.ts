@@ -1,17 +1,23 @@
+import crypto from 'node:crypto';
 import {
   LudoColor,
   TokenState,
   LudoToken,
   LudoPlayer,
   LudoGameState,
-  ValidMove
+  ValidMove,
+  StepCoord,
+  GridCoord,
+  LudoBettingConfig,
+  LastMoveExecution
 } from './types';
+import {
+  TRACK_COORDS,
+  HOME_PATH_COORDS,
+  CENTER_GOAL_COORDS,
+  BASE_SLOT_COORDS
+} from '@/components/ludo/board-coords';
 
-/**
- * Standard Ludo Track Map Constants
- * Common track: 52 squares (0..51)
- * Colors move clockwise around 52 tiles, then enter a 5-tile home column to Home (tile 57).
- */
 export const START_SQUARES: Record<LudoColor, number> = {
   red: 0,
   green: 13,
@@ -19,36 +25,53 @@ export const START_SQUARES: Record<LudoColor, number> = {
   blue: 39
 };
 
-/**
- * Safe squares on common track where tokens cannot be captured.
- * - 4 color starting squares: 0, 13, 26, 39
- * - 4 star squares: 8, 21, 34, 47
- */
 export const SAFE_SQUARES = new Set<number>([0, 8, 13, 21, 26, 34, 39, 47]);
-
 export const TOTAL_PATH_STEPS = 57; // Step 1 is start square, Step 57 is home.
 
 export class LudoEngine {
   /**
-   * Initializes a new deterministic Ludo game
+   * Initializes a new deterministic Ludo game with betting & prize pool
    */
   static createGame(
     sessionId: string,
     mode: 'vs_ai' | 'pass_play' | 'multiplayer_room' = 'vs_ai',
-    playerCount: 2 | 4 = 4
+    playerCount: 2 | 4 = 4,
+    bettingOptions?: { stakeMinor?: number; rakePercentage?: number; isRealMoney?: boolean }
   ): LudoGameState {
     let colors: LudoColor[] = [];
     if (playerCount === 2) {
-      // 2-Player: Red vs Yellow (opposite sides)
       colors = ['red', 'yellow'];
     } else {
-      // 4-Player: Red, Green, Yellow, Blue
       colors = ['red', 'green', 'yellow', 'blue'];
     }
 
+    const stakeMinor = bettingOptions?.stakeMinor ?? 200; // Default £2.00
+    const rakePercentage = bettingOptions?.rakePercentage ?? 10; // 10% platform fee
+    const grossStakes = stakeMinor * colors.length;
+    const platformFeeMinor = Math.round((grossStakes * rakePercentage) / 100);
+    const prizePoolMinor = grossStakes - platformFeeMinor;
+    const isRealMoney = bettingOptions?.isRealMoney ?? false;
+
+    const betting: LudoBettingConfig = {
+      stakeMinor,
+      entryFeeMinor: stakeMinor,
+      prizePoolMinor,
+      platformFeeMinor,
+      rakePercentage,
+      isRealMoney,
+      settlementStatus: stakeMinor > 0 ? 'reserved' : 'none'
+    };
+
+    const AVATARS = {
+      red: '👑',
+      green: '⚡',
+      yellow: '🔥',
+      blue: '💎'
+    };
+
     const players: LudoPlayer[] = colors.map((color, idx) => {
-      // In vs_ai mode, Player 1 (Red) is human, others are bots
       const isBot = mode === 'vs_ai' ? idx > 0 : false;
+      const isHuman = !isBot;
       const tokens: LudoToken[] = [0, 1, 2, 3].map((id) => ({
         id,
         color,
@@ -57,11 +80,26 @@ export class LudoEngine {
         stepCount: 0
       }));
 
+      const botNames = {
+        green: 'AceBot',
+        yellow: 'GrandMaster',
+        blue: 'SwiftChallenger'
+      };
+
+      const name = isBot
+        ? botNames[color as keyof typeof botNames] || `AI (${color.toUpperCase()})`
+        : idx === 0
+        ? 'You (Host)'
+        : `Player (${color.toUpperCase()})`;
+
       return {
         id: `player_${color}`,
-        name: isBot ? `Bot (${color.toUpperCase()})` : `Player (${color.toUpperCase()})`,
+        name,
         color,
+        avatar: AVATARS[color],
         isBot,
+        isHuman,
+        connectionStatus: isBot ? 'bot' : 'online',
         tokens,
         score: 0,
         hasWon: false
@@ -78,16 +116,81 @@ export class LudoEngine {
       currentDiceRoll: null,
       consecutiveSixes: 0,
       extraTurnPending: false,
-      lastMoveNotice: `Game started! ${colors[0].toUpperCase()}'s turn to roll the dice.`,
+      lastMoveNotice: `Match ready! ${colors[0].toUpperCase()}'s turn to roll the dice.`,
       winnerColor: null,
       status: 'active',
+      betting,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
   }
 
   /**
-   * Calculate valid moves for the active player given a dice roll
+   * Computes exact intermediate path coordinates for smooth step-by-step movement
+   */
+  static computeStepPath(
+    color: LudoColor,
+    fromState: TokenState,
+    fromStepCount: number,
+    roll: number
+  ): StepCoord[] {
+    const path: StepCoord[] = [];
+
+    // 1. Exiting from Base yard on a 6
+    if (fromState === 'base') {
+      const startTrackIdx = START_SQUARES[color];
+      const startCoord = TRACK_COORDS[startTrackIdx];
+      path.push({
+        r: startCoord.r,
+        c: startCoord.c,
+        stepCount: 1,
+        isHome: false
+      });
+      return path;
+    }
+
+    // 2. Advancing along track or home column step by step
+    for (let s = 1; s <= roll; s++) {
+      const currStep = fromStepCount + s;
+
+      if (currStep <= 51) {
+        // Common 52-tile circuit
+        const startTrackIdx = START_SQUARES[color];
+        const trackIdx = (startTrackIdx + currStep - 1) % 52;
+        const coord = TRACK_COORDS[trackIdx];
+        path.push({
+          r: coord.r,
+          c: coord.c,
+          stepCount: currStep,
+          isHome: false
+        });
+      } else if (currStep >= 52 && currStep <= 56) {
+        // Colored Home path column
+        const homeIdx = currStep - 52; // 0..4
+        const coord = HOME_PATH_COORDS[color][homeIdx];
+        path.push({
+          r: coord.r,
+          c: coord.c,
+          stepCount: currStep,
+          isHome: false
+        });
+      } else if (currStep === TOTAL_PATH_STEPS) {
+        // Center Goal (Home)
+        const coord = CENTER_GOAL_COORDS[color];
+        path.push({
+          r: coord.r,
+          c: coord.c,
+          stepCount: currStep,
+          isHome: true
+        });
+      }
+    }
+
+    return path;
+  }
+
+  /**
+   * Calculate valid moves for the active player with complete step-by-step path coordinates
    */
   static getValidMoves(state: LudoGameState, diceRoll: number): ValidMove[] {
     if (state.turnPhase !== 'need_move' && state.turnPhase !== 'need_roll') {
@@ -104,8 +207,9 @@ export class LudoEngine {
       if (token.state === 'base') {
         if (diceRoll === 6) {
           const startSquare = START_SQUARES[player.color];
-          // Check if destination on track has opponent token
           const captureInfo = this.checkCapture(state, player.color, startSquare);
+          const stepPath = this.computeStepPath(player.color, 'base', 0, 6);
+
           validMoves.push({
             tokenId: token.id,
             color: player.color,
@@ -113,6 +217,7 @@ export class LudoEngine {
             fromPosition: token.position,
             toState: 'track',
             toPosition: startSquare,
+            stepPath,
             isCapture: captureInfo.isCapture,
             capturedToken: captureInfo.capturedToken,
             isHome: false
@@ -136,6 +241,7 @@ export class LudoEngine {
 
       // Reaching exact Home
       if (newStepCount === TOTAL_PATH_STEPS) {
+        const stepPath = this.computeStepPath(player.color, token.state, token.stepCount, diceRoll);
         validMoves.push({
           tokenId: token.id,
           color: player.color,
@@ -143,6 +249,7 @@ export class LudoEngine {
           fromPosition: token.position,
           toState: 'home',
           toPosition: 5,
+          stepPath,
           isCapture: false,
           isHome: true
         });
@@ -152,6 +259,7 @@ export class LudoEngine {
       // Moving along home column (steps 52..56)
       if (newStepCount > 51) {
         const homePathIndex = newStepCount - 52; // 0..4
+        const stepPath = this.computeStepPath(player.color, token.state, token.stepCount, diceRoll);
         validMoves.push({
           tokenId: token.id,
           color: player.color,
@@ -159,6 +267,7 @@ export class LudoEngine {
           fromPosition: token.position,
           toState: 'home_path',
           toPosition: homePathIndex,
+          stepPath,
           isCapture: false,
           isHome: false
         });
@@ -169,6 +278,7 @@ export class LudoEngine {
       const startSquare = START_SQUARES[player.color];
       const targetTrackPos = (startSquare + newStepCount - 1) % 52;
       const captureInfo = this.checkCapture(state, player.color, targetTrackPos);
+      const stepPath = this.computeStepPath(player.color, token.state, token.stepCount, diceRoll);
 
       validMoves.push({
         tokenId: token.id,
@@ -177,6 +287,7 @@ export class LudoEngine {
         fromPosition: token.position,
         toState: 'track',
         toPosition: targetTrackPos,
+        stepPath,
         isCapture: captureInfo.isCapture,
         capturedToken: captureInfo.capturedToken,
         isHome: false
@@ -193,7 +304,7 @@ export class LudoEngine {
     state: LudoGameState,
     currentColor: LudoColor,
     trackPos: number
-  ): { isCapture: boolean; capturedToken?: { color: LudoColor; tokenId: number } } {
+  ): { isCapture: boolean; capturedToken?: { color: LudoColor; tokenId: number; baseCoord: GridCoord } } {
     if (SAFE_SQUARES.has(trackPos)) {
       return { isCapture: false };
     }
@@ -203,15 +314,31 @@ export class LudoEngine {
 
       for (const token of player.tokens) {
         if (token.state === 'track' && token.position === trackPos) {
+          const baseCoord = BASE_SLOT_COORDS[player.color][token.id];
           return {
             isCapture: true,
-            capturedToken: { color: player.color, tokenId: token.id }
+            capturedToken: {
+              color: player.color,
+              tokenId: token.id,
+              baseCoord
+            }
           };
         }
       }
     }
 
     return { isCapture: false };
+  }
+
+  /**
+   * Cryptographically secure CSPRNG dice roll generator
+   */
+  static generateRandomRoll(): number {
+    try {
+      return crypto.randomInt(1, 7);
+    } catch (e) {
+      return Math.floor(Math.random() * 6) + 1;
+    }
   }
 
   /**
@@ -222,8 +349,7 @@ export class LudoEngine {
       throw new Error(`INVALID_PHASE: Cannot roll dice during '${state.turnPhase}' phase.`);
     }
 
-    // Cryptographic pseudo-random roll 1..6
-    const roll = forcedRoll ?? Math.floor(Math.random() * 6) + 1;
+    const roll = forcedRoll ?? this.generateRandomRoll();
 
     let consecutiveSixes = state.consecutiveSixes;
     if (roll === 6) {
@@ -232,7 +358,7 @@ export class LudoEngine {
       consecutiveSixes = 0;
     }
 
-    // Rule: Three consecutive 6s voids the turn!
+    // Rule: Three consecutive 6s voids the turn
     if (consecutiveSixes === 3) {
       const nextColor = this.getNextPlayerColor(state);
       return {
@@ -276,18 +402,19 @@ export class LudoEngine {
   }
 
   /**
-   * Authoritative Token Move Execution
+   * Authoritative Token Move Execution with full step-by-step path recording
    */
   static processMove(state: LudoGameState, tokenId: number): LudoGameState {
     if (state.turnPhase !== 'need_move' || state.currentDiceRoll === null) {
       throw new Error(`INVALID_ACTION: No active dice roll to execute move.`);
     }
 
-    const validMoves = this.getValidMoves(state, state.currentDiceRoll);
+    const roll = state.currentDiceRoll;
+    const validMoves = this.getValidMoves(state, roll);
     const selectedMove = validMoves.find((m) => m.tokenId === tokenId);
 
     if (!selectedMove) {
-      throw new Error(`ILLEGAL_MOVE: Token ${tokenId} cannot move with roll ${state.currentDiceRoll}.`);
+      throw new Error(`ILLEGAL_MOVE: Token ${tokenId} cannot move with roll ${roll}.`);
     }
 
     const updatedPlayers = state.players.map((player) => {
@@ -301,7 +428,7 @@ export class LudoEngine {
             } else if (selectedMove.toState === 'home') {
               nextStepCount = TOTAL_PATH_STEPS;
             } else {
-              nextStepCount = token.stepCount + (state.currentDiceRoll || 0);
+              nextStepCount = token.stepCount + roll;
             }
 
             return {
@@ -320,7 +447,7 @@ export class LudoEngine {
           ...player,
           tokens: updatedTokens,
           hasWon,
-          score: player.score + (selectedMove.isHome ? 50 : selectedMove.isCapture ? 20 : (state.currentDiceRoll || 0))
+          score: player.score + (selectedMove.isHome ? 50 : selectedMove.isCapture ? 25 : roll)
         };
       }
 
@@ -348,6 +475,17 @@ export class LudoEngine {
 
     const activePlayer = updatedPlayers.find((p) => p.color === state.currentTurnColor);
 
+    const lastExecutedMove: LastMoveExecution = {
+      tokenId,
+      color: state.currentTurnColor,
+      roll,
+      stepPath: selectedMove.stepPath,
+      isCapture: selectedMove.isCapture,
+      capturedToken: selectedMove.capturedToken,
+      isHome: selectedMove.isHome,
+      timestamp: new Date().toISOString()
+    };
+
     // Check Win Condition
     if (activePlayer && activePlayer.hasWon) {
       return {
@@ -356,28 +494,22 @@ export class LudoEngine {
         turnPhase: 'game_over',
         status: 'completed',
         winnerColor: activePlayer.color,
-        lastMoveNotice: `VICTORY! ${activePlayer.color.toUpperCase()} has moved all 4 tokens home and won the game!`,
+        lastExecutedMove,
+        lastMoveNotice: `VICTORY! ${activePlayer.name} has moved all 4 tokens home and won the prize pool of ${(state.betting.prizePoolMinor / 100).toFixed(2)}!`,
         updatedAt: new Date().toISOString()
       };
     }
 
-    // Determine Extra Turn:
-    // 1. Rolled a 6
-    // 2. Captured an opponent token
-    // 3. Reached home
-    const getsExtraTurn =
-      state.currentDiceRoll === 6 || selectedMove.isCapture || selectedMove.isHome;
-
-    const nextColor = getsExtraTurn
-      ? state.currentTurnColor
-      : this.getNextPlayerColor(state);
+    // Determine Extra Turn
+    const getsExtraTurn = roll === 6 || selectedMove.isCapture || selectedMove.isHome;
+    const nextColor = getsExtraTurn ? state.currentTurnColor : this.getNextPlayerColor(state);
 
     let notice = `${state.currentTurnColor.toUpperCase()} moved token ${tokenId + 1}.`;
     if (selectedMove.isCapture) {
       notice = `CAPTURE! ${state.currentTurnColor.toUpperCase()} captured ${selectedMove.capturedToken?.color.toUpperCase()}'s token! Extra turn granted.`;
     } else if (selectedMove.isHome) {
       notice = `HOME! ${state.currentTurnColor.toUpperCase()} reached home! Extra turn granted.`;
-    } else if (state.currentDiceRoll === 6) {
+    } else if (roll === 6) {
       notice = `${state.currentTurnColor.toUpperCase()} rolled a 6! Extra turn granted.`;
     }
 
@@ -388,6 +520,7 @@ export class LudoEngine {
       turnPhase: 'need_roll',
       currentDiceRoll: null,
       extraTurnPending: getsExtraTurn,
+      lastExecutedMove,
       lastMoveNotice: notice,
       updatedAt: new Date().toISOString()
     };
@@ -408,11 +541,6 @@ export class LudoEngine {
 
   /**
    * Intelligent Heuristic Bot Move Selector
-   * Priority:
-   * 1. Capture opponent token
-   * 2. Reach home
-   * 3. Exit base on 6
-   * 4. Move token safely or advance furthest token
    */
   static selectBestBotMove(state: LudoGameState, validMoves: ValidMove[]): ValidMove | null {
     if (validMoves.length === 0) return null;

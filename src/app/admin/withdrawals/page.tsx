@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ArrowUpRight, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function AdminWithdrawalsPage() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
@@ -41,51 +40,51 @@ export default function AdminWithdrawalsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-            <ArrowUpRight className="w-8 h-8 text-[#ff5a7a]" />
-            <span>Withdrawal Authorization Queue</span>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#191919] tracking-tight flex items-center gap-2.5">
+            <ArrowUpRight className="w-6 h-6 text-[#E5484D]" />
+            <span>Withdrawal authorization queue</span>
           </h1>
-          <p className="text-xs text-[#c4bfd0] mt-1">
+          <p className="text-xs text-[#6F6F6F] mt-1">
             Dual approval workflow for player payout requests. Dual control enforced server-side.
           </p>
         </div>
 
         <button
           onClick={fetchWithdrawals}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#242424] border border-white/10 text-xs font-medium text-white hover:border-[#b45df0] transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[rgba(0,0,0,0.12)] text-xs font-medium text-[#191919] hover:bg-[#F8F8F8] transition-colors"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#b45df0] ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Queue</span>
+          <RefreshCw className={`w-3.5 h-3.5 text-[#317CFF] ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh queue</span>
         </button>
       </div>
 
       {feedback && (
-        <div className={`p-4 rounded-xl text-xs font-semibold flex items-center gap-3 ${
+        <div className={`p-4 rounded-xl text-xs font-medium flex items-center gap-3 ${
           feedback.startsWith('MAKER_CHECKER')
-            ? 'bg-[#ff5a7a]/20 text-[#ff5a7a] border border-[#ff5a7a]/40'
-            : 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40'
+            ? 'bg-[#E5484D]/10 text-[#E5484D] border border-[#E5484D]/20'
+            : 'bg-[#1FAE5B]/10 text-[#1FAE5B] border border-[#1FAE5B]/20'
         }`}>
-          {feedback.startsWith('MAKER_CHECKER') ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+          {feedback.startsWith('MAKER_CHECKER') ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
           <span>{feedback}</span>
         </div>
       )}
 
       {/* Acting Checker Identity */}
-      <div className="p-4 rounded-xl bg-[#242424] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+      <div className="p-4 rounded-xl bg-white border border-[rgba(0,0,0,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
         <div>
-          <span className="text-[#c4bfd0] font-semibold block">Acting Checker Identity:</span>
-          <p className="text-white font-mono mt-0.5">Checker ID: <strong className="text-[#b45df0]">{checkerId}</strong></p>
+          <span className="text-[#6F6F6F] font-medium block">Acting checker identity:</span>
+          <p className="text-[#191919] font-mono mt-0.5">Checker ID: <strong className="text-[#317CFF]">{checkerId}</strong></p>
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-[#c4bfd0]">Switch Checker:</label>
+          <label className="text-[#6F6F6F]">Switch checker:</label>
           <select
             value={checkerId}
             onChange={(e) => setCheckerId(e.target.value)}
-            className="bg-[#1f1f1f] text-white border border-white/10 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-[#b45df0]"
+            className="bg-white text-[#191919] border border-[rgba(0,0,0,0.12)] rounded-full px-3.5 py-1.5 font-mono text-xs focus:outline-none focus:border-[#317CFF]"
           >
             <option value="usr_fin_mgr_01">usr_fin_mgr_01 (Finance Manager)</option>
             <option value="usr_operator_admin_01">usr_operator_admin_01 (Operator Admin)</option>
@@ -95,31 +94,31 @@ export default function AdminWithdrawalsPage() {
       </div>
 
       {/* Table */}
-      <div className="p-6 rounded-2xl bg-[#242424] border border-white/10 space-y-4">
-        <h2 className="text-lg font-bold text-white">Pending Withdrawal Requests</h2>
+      <div className="p-6 rounded-2xl bg-white border border-[rgba(0,0,0,0.08)] space-y-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
+        <h2 className="text-base font-semibold text-[#191919]">Pending withdrawal requests</h2>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
             <thead>
-              <tr className="bg-[#1f1f1f] text-[#c4bfd0] border-b border-white/10">
-                <th className="p-3">Reference ID</th>
-                <th className="p-3">Player ID</th>
-                <th className="p-3">Amount (GBP)</th>
-                <th className="p-3">Destination Account</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Maker-Checker Action</th>
+              <tr className="bg-[#F8F8F8] text-[#6F6F6F] border-b border-[rgba(0,0,0,0.08)]">
+                <th className="p-3 font-medium">Reference ID</th>
+                <th className="p-3 font-medium">Player ID</th>
+                <th className="p-3 font-medium">Amount (Units)</th>
+                <th className="p-3 font-medium">Destination account</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 text-right font-medium">Maker-checker action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[rgba(0,0,0,0.06)]">
               {withdrawals.map((w) => (
-                <tr key={w.id} className="hover:bg-white/5">
-                  <td className="p-3 font-bold text-white">{w.id}</td>
-                  <td className="p-3 text-[#c4bfd0]">{w.userId}</td>
-                  <td className="p-3 font-bold text-[#ff5a7a]">£{(w.amountMinor / 100).toFixed(2)}</td>
-                  <td className="p-3 text-[#c4bfd0]">{w.destinationAccount}</td>
+                <tr key={w.id} className="hover:bg-[#F8F8F8] transition-colors">
+                  <td className="p-3 font-semibold text-[#191919]">{w.id}</td>
+                  <td className="p-3 text-[#6F6F6F]">{w.userId}</td>
+                  <td className="p-3 font-bold text-[#E5484D]">{(w.amountMinor / 100).toFixed(2)}</td>
+                  <td className="p-3 text-[#6F6F6F]">{w.destinationAccount}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      w.status === 'APPROVED' ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      w.status === 'APPROVED' ? 'bg-[#1FAE5B]/10 text-[#1FAE5B]' : 'bg-[#E5484D]/10 text-[#E5484D]'
                     }`}>
                       {w.status}
                     </span>
@@ -128,12 +127,12 @@ export default function AdminWithdrawalsPage() {
                     {w.status === 'PENDING_APPROVAL' ? (
                       <button
                         onClick={() => handleApprove(w.id, w.makerId)}
-                        className="px-3.5 py-1.5 rounded-lg bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-xs shadow-md"
+                        className="px-3.5 py-1.5 rounded-full bg-[#1FAE5B] hover:bg-[#1FAE5B]/90 text-white font-medium text-xs transition-all"
                       >
-                        Approve Payout
+                        Approve payout
                       </button>
                     ) : (
-                      <span className="text-[10px] text-[#9c9aa8]">Approved by {w.checkerId}</span>
+                      <span className="text-[10px] text-[#6F6F6F]">Approved by {w.checkerId}</span>
                     )}
                   </td>
                 </tr>

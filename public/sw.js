@@ -6,7 +6,7 @@
  * - Fails safely to offline shell without allowing financial operations offline
  */
 
-const CACHE_NAME = 'atlas-shell-v1';
+const CACHE_NAME = 'atlas-shell-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

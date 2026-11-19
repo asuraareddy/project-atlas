@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
 import { otherGamesAdapter } from '@/domain/games/adapters/other-games.adapter';
+import { carromAdapter } from '@/domain/games/adapters/carrom.adapter';
+import { ludoAdapter } from '@/domain/games/adapters/ludo.adapter';
 
 export async function GET() {
   try {
-    const games = await otherGamesAdapter.getGames();
-    const poolRooms = await otherGamesAdapter.getPoolRooms();
+    const [games, poolRooms, carromRooms, ludoRooms] = await Promise.all([
+      otherGamesAdapter.getGames(),
+      otherGamesAdapter.getPoolRooms(),
+      carromAdapter.getActiveRooms(),
+      ludoAdapter.getActiveRooms(),
+    ]);
     return NextResponse.json({
       data: {
         games,
         poolRooms,
+        carromRooms,
+        ludoRooms,
         capabilities: otherGamesAdapter.getCapabilities()
       },
       meta: {

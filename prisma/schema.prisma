@@ -17,7 +17,10 @@ generator client {
 model Organization {
   id              String         @id @default(uuid())
   name            String
+  slug            String?        @unique
   status          String         @default("ACTIVE") // ACTIVE, SUSPENDED
+  packageCode     String?        @default("COMPLETE_PRO_SUITE") @map("package_code")
+  branding        Json?
   defaultCurrency String         @default("GBP") @map("default_currency")
   timezone        String         @default("Europe/London")
   createdAt       DateTime       @default(now()) @map("created_at")
@@ -31,9 +34,42 @@ model Organization {
   ledgerAccounts  LedgerAccount[]
   ledgerTxs       LedgerTransaction[]
   auditEvents     AuditEvent[]
+  domains         TenantDomain[]
+  entitlements    TenantGameEntitlementRecord[]
 
   @@map("organizations")
 }
+
+model TenantDomain {
+  id                 String       @id @default(uuid())
+  organizationId     String       @map("organization_id")
+  hostname           String       @unique
+  isPrimary          Boolean      @default(false) @map("is_primary")
+  verificationStatus String       @default("VERIFIED") @map("verification_status")
+  verificationToken  String       @map("verification_token")
+  sslStatus          String       @default("ACTIVE") @map("ssl_status")
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_domains")
+}
+
+model TenantGameEntitlementRecord {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  gameKey        String       @map("game_key")
+  isEnabled      Boolean      @default(true) @map("is_enabled")
+  displayOrder   Int          @default(1) @map("display_order")
+  customTitle    String?      @map("custom_title")
+  customBadge    String?      @map("custom_badge")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, gameKey])
+  @@map("tenant_game_entitlements")
+}
+
 
 model Branch {
   id             String       @id @default(uuid())
@@ -494,4 +530,285 @@ model AuditEvent {
   @@index([organizationId, createdAt])
   @@index([resourceType, resourceId])
   @@map("audit_events")
+}
+
+
+// -------------------------------------------------------------
+// B2B White-Label Multi-Tenant SaaS & Plug-and-Play Addon Marketplace
+// (Section 8: Database Architecture)
+// -------------------------------------------------------------
+
+model TenantProfile {
+  id              String         @id @default(uuid())
+  slug            String         @unique
+  businessName    String         @map("business_name")
+  brandName       String         @map("brand_name")
+  status          String         @default("ACTIVE") // ACTIVE, SUSPENDED, ONBOARDING, ARCHIVED
+  packageCode     String         @default("COMPLETE_PRO_SUITE") @map("package_code")
+  contactEmail    String         @map("contact_email")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  branding        TenantBrandingConfigRecord?
+  domains         TenantCustomDomain[]
+  tenantUsers     TenantUserRecord[]
+  tenantRoles     TenantRoleRecord[]
+  addons          TenantAddonEntitlement[]
+  providerConfigs TenantProviderCredential[]
+  subscriptions   TenantSubscriptionRecord[]
+  entitlements    TenantFeatureEntitlement[]
+  usageRecords    TenantUsageMetric[]
+  auditLogs       TenantAuditRecord[]
+
+  @@map("tenants")
+}
+
+model TenantCustomDomain {
+  id                 String        @id @default(uuid())
+  tenantId           String        @map("tenant_id")
+  hostname           String        @unique
+  isPrimary          Boolean       @default(false) @map("is_primary")
+  verificationStatus String        @default("VERIFIED") @map("verification_status") // VERIFIED, PENDING_DNS, FAILED
+  verificationToken  String        @map("verification_token")
+  sslStatus          String        @default("ACTIVE") @map("ssl_status") // ACTIVE, PENDING, ERROR
+  verifiedAt         DateTime?     @map("verified_at")
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  tenant             TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_domains_v2")
+}
+
+model TenantBrandingConfigRecord {
+  id                String        @id @default(uuid())
+  tenantId          String        @unique @map("tenant_id")
+  brandName         String        @map("brand_name")
+  tagline           String?
+  logoUrl           String        @default("/icons/icon-192.png") @map("logo_url")
+  faviconUrl        String?       @default("/favicon.ico") @map("favicon_url")
+  primaryColor      String        @default("#7e0ac2") @map("primary_color")
+  primaryColorHover String        @default("#9a13e6") @map("primary_color_hover")
+  secondaryColor    String        @default("#b45df0") @map("secondary_color")
+  backgroundColor   String        @default("#18181b") @map("background_color")
+  textColor         String        @default("#ffffff") @map("text_color")
+  accentGlowColor   String        @default("rgba(126,10,194,0.35)") @map("accent_glow_color")
+  heroHeading       String        @map("hero_heading")
+  heroSubheading    String        @map("hero_subheading")
+  footerText        String        @map("footer_text")
+  supportEmail      String        @map("support_email")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  tenant            TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_branding")
+}
+
+model TenantUserRecord {
+  id          String        @id @default(uuid())
+  tenantId    String        @map("tenant_id")
+  userId      String        @map("user_id")
+  email       String
+  role        String        @default("PLAYER") // CLIENT_ADMIN, OPERATOR_STAFF, PLAYER
+  status      String        @default("ACTIVE")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  tenant      TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, email])
+  @@map("tenant_users")
+}
+
+model TenantRoleRecord {
+  id          String        @id @default(uuid())
+  tenantId    String        @map("tenant_id")
+  roleKey     String        @map("role_key")
+  roleName    String        @map("role_name")
+  permissions Json          @default("[]") // array of permission strings
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  tenant      TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, roleKey])
+  @@map("tenant_roles")
+}
+
+model AddonRegistryRecord {
+  id                   String                 @id // e.g. 'sports', 'casino'
+  name                 String
+  version              String                 @default("1.0.0")
+  category             String                 // SPORTS, CASINO, SKILL_GAMES, etc.
+  status               String                 @default("ACTIVE") // ACTIVE, INACTIVE, BETA
+  description          String
+  iconName             String                 @map("icon_name")
+  routePrefix          String                 @map("route_prefix")
+  routes               Json                   @default("[]")
+  requiredPermissions  Json                   @default("[]") @map("required_permissions")
+  dependentServices    Json                   @default("[]") @map("dependent_services")
+  configurationSchema  Json                   @default("{}") @map("configuration_schema")
+  healthCheckEndpoint  String                 @map("health_check_endpoint")
+  providerRequirements Json                   @default("[]") @map("provider_requirements")
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+
+  versions             AddonVersionRecord[]
+  dependencies         AddonDependencyRecord[]
+  tenantAddons         TenantAddonEntitlement[]
+
+  @@map("addon_registry")
+}
+
+model AddonVersionRecord {
+  id             String              @id @default(uuid())
+  addonId        String              @map("addon_id")
+  version        String
+  changelog      String?
+  releaseStatus  String              @default("STABLE") @map("release_status") // STABLE, DEPRECATED, BETA
+  releasedAt     DateTime            @default(now()) @map("released_at")
+
+  addon          AddonRegistryRecord @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@unique([addonId, version])
+  @@map("addon_versions")
+}
+
+model AddonDependencyRecord {
+  id                 String              @id @default(uuid())
+  addonId            String              @map("addon_id")
+  dependentServiceId String              @map("dependent_service_id")
+  isRequired         Boolean             @default(true) @map("is_required")
+  minimumVersion     String?             @map("minimum_version")
+
+  addon              AddonRegistryRecord @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@unique([addonId, dependentServiceId])
+  @@map("addon_dependencies")
+}
+
+model TenantAddonEntitlement {
+  id           String              @id @default(uuid())
+  tenantId     String              @map("tenant_id")
+  addonId      String              @map("addon_id")
+  isEnabled    Boolean             @default(true) @map("is_enabled")
+  displayOrder Int                 @default(1) @map("display_order")
+  version      String              @default("1.0.0")
+  customConfig Json?               @map("custom_config")
+  activatedAt  DateTime            @default(now()) @map("activated_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  tenant       TenantProfile       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  addon        AddonRegistryRecord @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, addonId])
+  @@map("tenant_addons")
+}
+
+model ProviderRegistryRecord {
+  id                   String                      @id // e.g. 'prov_betfair_api_ng', 'prov_flexrix_casino_api'
+  name                 String
+  category             String                      // SPORTS_EXCHANGE, CASINO_AGGREGATOR, CRYPTO_GATEWAY
+  status               String                      @default("ACTIVE")
+  adapterClass         String                      @map("adapter_class")
+  credentialSchema     Json                        @default("{}") @map("credential_schema")
+  createdAt            DateTime                    @default(now()) @map("created_at")
+
+  tenantConfigs        TenantProviderCredential[]
+  healthRecords        IntegrationHealthRecord[]
+
+  @@map("provider_registry")
+}
+
+model TenantProviderCredential {
+  id                   String                 @id @default(uuid())
+  tenantId             String                 @map("tenant_id")
+  providerId           String                 @map("provider_id")
+  isLive               Boolean                @default(false) @map("is_live") // false = SANDBOX / TEST MODE
+  encryptedCredentials Json                   @map("encrypted_credentials")
+  updatedAt            DateTime               @updatedAt @map("updated_at")
+
+  tenant               TenantProfile          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider             ProviderRegistryRecord @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, providerId])
+  @@map("tenant_provider_config")
+}
+
+model TenantSubscriptionRecord {
+  id                 String        @id @default(uuid())
+  tenantId           String        @map("tenant_id")
+  packageCode        String        @map("package_code")
+  billingCycle       String        @default("MONTHLY") @map("billing_cycle") // MONTHLY, ANNUAL
+  monthlyPriceMinor  Int           @map("monthly_price_minor")
+  currency           String        @default("GBP")
+  status             String        @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  currentPeriodStart DateTime      @default(now()) @map("current_period_start")
+  currentPeriodEnd   DateTime      @map("current_period_end")
+  createdAt          DateTime      @default(now()) @map("created_at")
+
+  tenant             TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_subscriptions")
+}
+
+model TenantFeatureEntitlement {
+  id             String        @id @default(uuid())
+  tenantId       String        @map("tenant_id")
+  featureKey     String        @map("feature_key")
+  isEntitled     Boolean       @default(true) @map("is_entitled")
+  quotaLimit     Int?          @map("quota_limit")
+  currentUsage   Int           @default(0) @map("current_usage")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  tenant         TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, featureKey])
+  @@map("tenant_entitlements")
+}
+
+model TenantAuditRecord {
+  id            String        @id @default(uuid())
+  tenantId      String        @map("tenant_id")
+  actorId       String        @map("actor_id")
+  actorRole     String        @map("actor_role")
+  action        String
+  resourceType  String        @map("resource_type")
+  resourceId    String        @map("resource_id")
+  metadata      Json?
+  ipAddress     String?       @map("ip_address")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  tenant        TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
+
+model TenantUsageMetric {
+  id                 String        @id @default(uuid())
+  tenantId           String        @map("tenant_id")
+  metricDate         DateTime      @default(now()) @map("metric_date")
+  activeUsersCount   Int           @default(0) @map("active_users_count")
+  totalTurnoverMinor BigInt        @default(0) @map("total_turnover_minor")
+  ggrMinor           BigInt        @default(0) @map("ggr_minor")
+  apiCallsCount      Int           @default(0) @map("api_calls_count")
+
+  tenant             TenantProfile @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, metricDate])
+  @@map("tenant_usage")
+}
+
+model IntegrationHealthRecord {
+  id              String                 @id @default(uuid())
+  providerId      String                 @map("provider_id")
+  endpointChecked String                 @map("endpoint_checked")
+  status          String                 @default("HEALTHY") // HEALTHY, DEGRADED, DOWN
+  latencyMs       Int                    @map("latency_ms")
+  checkedAt       DateTime               @default(now()) @map("checked_at")
+  details         Json?
+
+  provider        ProviderRegistryRecord @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, checkedAt])
+  @@map("integration_health")
 }

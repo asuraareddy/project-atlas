@@ -257,9 +257,9 @@ export class CryptoWatcherService {
 
     if (amountGbpMinor < config.minDepositGbpMinor || amountGbpMinor > config.maxDepositGbpMinor) {
       throw new Error(
-        `AMOUNT_LIMIT: Minimum deposit is £${(config.minDepositGbpMinor / 100).toFixed(
+        `AMOUNT_LIMIT: Minimum deposit is ${(config.minDepositGbpMinor / 100).toFixed(
           2
-        )}, Maximum is £${(config.maxDepositGbpMinor / 100).toFixed(2)}`
+        )}, Maximum is ${(config.maxDepositGbpMinor / 100).toFixed(2)}`
       );
     }
 

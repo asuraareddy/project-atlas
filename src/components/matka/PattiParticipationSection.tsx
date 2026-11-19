@@ -7,14 +7,12 @@ import {
   Layers,
   Plus,
   Minus,
-  Check,
   Trash2,
   AlertCircle,
   CheckCircle2,
   RefreshCw,
   Send,
   Sparkles,
-  Info,
   ChevronDown
 } from 'lucide-react';
 import { MarketSummary } from '@/domain/games/adapters/types';
@@ -23,7 +21,7 @@ import {
   PattiCategory,
   validatePoints
 } from '@/domain/games/matka/patti-generator';
-import { ThemeToggle } from '@/components/theme/ThemeProvider';
+import { useTheme, ThemeToggle } from '@/components/theme/ThemeProvider';
 
 export interface SelectedPattiItem {
   id: string; // unique key: `${marketId}_${date}_${gameType}_${pattiNumber}`
@@ -48,6 +46,9 @@ export default function PattiParticipationSection({
   preselectedMarketId,
   onMarketChange
 }: PattiParticipationSectionProps) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   // 1. Core Selection States
   const [selectedMarketId, setSelectedMarketId] = useState<string>(
     preselectedMarketId || markets[0]?.id || 'mkt_kalyan_morning'
@@ -260,15 +261,24 @@ export default function PattiParticipationSection({
   };
 
   return (
-    <section id="patti-console" className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-3.5 sm:p-5 lg:p-6 space-y-4 shadow-2xl">
+    <section
+      id="patti-console"
+      className={`border rounded-2xl p-3.5 sm:p-5 lg:p-6 space-y-4 shadow-2xl transition-colors ${
+        isDark ? 'bg-[#1a1a1a] border-white/10 text-white' : 'bg-white border-zinc-200 text-zinc-900 shadow-md'
+      }`}
+    >
       {/* Header Banner - Mobile Compact */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/10 gap-3">
+      <div
+        className={`flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b gap-3 ${
+          isDark ? 'border-white/10' : 'border-zinc-200'
+        }`}
+      >
         <div>
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#b45df0] uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Patti Selection (Single, Double & Triple)</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2 mt-0.5">
+          <h2 className={`text-xl sm:text-2xl font-black flex items-center gap-2 mt-0.5 ${isDark ? 'text-white' : 'text-zinc-900'}`}>
             <Dice5 className="w-6 h-6 text-[#b45df0]" />
             <span>Patti Play Console</span>
           </h2>
@@ -284,7 +294,9 @@ export default function PattiParticipationSection({
                 const found = markets.find((m) => m.id === e.target.value);
                 if (found && onMarketChange) onMarketChange(found);
               }}
-              className="w-full bg-[#242424] border border-white/15 rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:border-[#b45df0] focus:outline-none appearance-none pr-8 truncate"
+              className={`w-full border rounded-xl px-3 py-2.5 text-xs font-bold focus:border-[#b45df0] focus:outline-none appearance-none pr-8 truncate transition-colors ${
+                isDark ? 'bg-[#242424] border-white/15 text-white' : 'bg-zinc-50 border-zinc-200 text-zinc-900'
+              }`}
             >
               {markets.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -364,7 +376,7 @@ export default function PattiParticipationSection({
         <div className="sm:col-span-2 lg:col-span-1">
           <label className="text-[11px] font-bold text-[#c4bfd0] flex items-center justify-between mb-1.5 uppercase tracking-wider">
             <span>Points per Patti</span>
-            <span className="text-[10px] text-[#b45df0] font-mono lowercase">1 pt = £1.00</span>
+            <span className="text-[10px] text-[#b45df0] font-mono lowercase">1 cash = 1 pt</span>
           </label>
           <div className="flex items-center gap-2">
             <div className="flex items-center bg-[#1a1a1a] border border-white/15 rounded-xl overflow-hidden h-11 flex-1">
@@ -710,7 +722,7 @@ export default function PattiParticipationSection({
                           {item.gameType} DRAW
                         </span>
                         <span className="text-[11px] font-mono font-bold text-[#b45df0]">
-                          {item.points} pts (£{item.points}.00)
+                          {item.points} pts
                         </span>
                       </div>
                     </div>
@@ -744,7 +756,7 @@ export default function PattiParticipationSection({
               </div>
               <div className="flex justify-between text-sm font-black text-white pt-1 border-t border-white/5">
                 <span>Total Points Amount:</span>
-                <span className="font-mono text-[#10b981]">{totalPointsAmount} pts (£{totalPointsAmount}.00)</span>
+                <span className="font-mono text-[#10b981]">{totalPointsAmount} pts</span>
               </div>
             </div>
 

@@ -13,6 +13,20 @@ export class ClientOtherGamesAdapter implements OtherGamesProviderAdapter {
   async getGames() {
     return [
       {
+        id: 'game_carrom',
+        name: 'Carrom Tabletop',
+        category: 'Tabletop',
+        description: 'Realistic 2D rigid-body Carrom physics, striker drag-shooting, queen cover, and multiplayer lobbies.',
+        status: 'available'
+      },
+      {
+        id: 'game_ludo',
+        name: 'Ludo Grand Circuit',
+        category: 'Board & Dice',
+        description: 'Competitive 2-4 player Ludo board race with CSPRNG dice rolling, safe-house rules, and AI bot matches.',
+        status: 'available'
+      },
+      {
         id: 'game_pool_8ball',
         name: '8-Ball Pool Pro',
         category: 'Pool',
@@ -20,10 +34,10 @@ export class ClientOtherGamesAdapter implements OtherGamesProviderAdapter {
         status: 'available'
       },
       {
-        id: 'game_snooker_blitz',
-        name: 'Snooker Blitz',
-        category: 'Cue Sports',
-        description: 'Speed snooker frames with server-verified potting and ball collision calculation.',
+        id: 'game_ace2three',
+        name: 'Ace2Three',
+        category: 'Card & Rummy',
+        description: 'Authentic 13-card Indian Rummy table. Cut for seat, closed/open deck draws, wild joker, and pure sequence declares.',
         status: 'available'
       },
       {
@@ -42,8 +56,8 @@ export class ClientOtherGamesAdapter implements OtherGamesProviderAdapter {
         roomId: 'pool_pub_01',
         category: 'pool',
         name: 'London Club (8-Ball)',
-        stakeMinor: 250, // £2.50
-        currency: 'GBP',
+        stakeMinor: 250, // 2.50 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 1,
         status: 'waiting',
@@ -53,8 +67,8 @@ export class ClientOtherGamesAdapter implements OtherGamesProviderAdapter {
         roomId: 'pool_championship_02',
         category: 'pool',
         name: 'Atlas Masters Tournament Table',
-        stakeMinor: 1000, // £10.00
-        currency: 'GBP',
+        stakeMinor: 1000, // 10.00 pts
+        currency: 'pts',
         maxPlayers: 2,
         currentPlayers: 2,
         status: 'in_progress',

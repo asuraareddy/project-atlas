@@ -1,0 +1,15 @@
+D:\project-atlas\backend\src\ProjectAtlas.Application\bin\Debug\net8.0\ProjectAtlas.Application.deps.json
+D:\project-atlas\backend\src\ProjectAtlas.Application\bin\Debug\net8.0\ProjectAtlas.Application.dll
+D:\project-atlas\backend\src\ProjectAtlas.Application\bin\Debug\net8.0\ProjectAtlas.Application.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Application\bin\Debug\net8.0\ProjectAtlas.Domain.dll
+D:\project-atlas\backend\src\ProjectAtlas.Application\bin\Debug\net8.0\ProjectAtlas.Domain.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.csproj.AssemblyReference.cache
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.AssemblyInfoInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.AssemblyInfo.cs
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.csproj.CoreCompileInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectA.AA997627.Up2Date
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.dll
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\refint\ProjectAtlas.Application.dll
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ProjectAtlas.Application.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Application\obj\Debug\net8.0\ref\ProjectAtlas.Application.dll

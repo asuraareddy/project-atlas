@@ -1,0 +1,17 @@
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Infrastructure.deps.json
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Infrastructure.dll
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Infrastructure.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Application.dll
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Domain.dll
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Application.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\bin\Debug\net8.0\ProjectAtlas.Domain.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.csproj.AssemblyReference.cache
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.AssemblyInfoInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.AssemblyInfo.cs
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.csproj.CoreCompileInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectA.8EE5F33A.Up2Date
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.dll
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\refint\ProjectAtlas.Infrastructure.dll
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ProjectAtlas.Infrastructure.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Infrastructure\obj\Debug\net8.0\ref\ProjectAtlas.Infrastructure.dll

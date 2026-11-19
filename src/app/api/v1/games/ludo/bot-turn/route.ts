@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { state, acted } = LudoSessionStore.processBotTurnIfActive(sessionId);
+    const { state, acted } = await LudoSessionStore.processBotTurnIfActive(sessionId);
     const validMoves = state.currentDiceRoll !== null
       ? LudoEngine.getValidMoves(state, state.currentDiceRoll)
       : [];

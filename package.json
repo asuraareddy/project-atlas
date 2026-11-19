@@ -7,12 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/run-all-tests.mjs"
+    "test": "node tests/run-all-tests.mjs",
+    "test:payments": "node tests/test-payment-gateways.mjs",
+    "test:providers": "node tests/test-provider-management.mjs",
+    "test:b2b": "node tests/test-whitelabel-b2b.mjs",
+    "test:admin-qa": "node tests/test-admin-audit-qa.mjs",
+    "test:all": "node tests/run-all-tests.mjs && node tests/test-whitelabel-b2b.mjs && node tests/test-provider-management.mjs && node tests/test-payment-gateways.mjs && node tests/test-admin-audit-qa.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.61.0",
-    "next": "16.4.3",
+    "next": "^16.4.6",
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -25,7 +30,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

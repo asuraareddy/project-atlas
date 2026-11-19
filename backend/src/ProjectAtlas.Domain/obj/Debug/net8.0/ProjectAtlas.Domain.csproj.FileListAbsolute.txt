@@ -1,0 +1,11 @@
+D:\project-atlas\backend\src\ProjectAtlas.Domain\bin\Debug\net8.0\ProjectAtlas.Domain.deps.json
+D:\project-atlas\backend\src\ProjectAtlas.Domain\bin\Debug\net8.0\ProjectAtlas.Domain.dll
+D:\project-atlas\backend\src\ProjectAtlas.Domain\bin\Debug\net8.0\ProjectAtlas.Domain.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.AssemblyInfoInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.AssemblyInfo.cs
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.csproj.CoreCompileInputs.cache
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.dll
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\refint\ProjectAtlas.Domain.dll
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ProjectAtlas.Domain.pdb
+D:\project-atlas\backend\src\ProjectAtlas.Domain\obj\Debug\net8.0\ref\ProjectAtlas.Domain.dll

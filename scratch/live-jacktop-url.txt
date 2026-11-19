@@ -1,0 +1,1 @@
+https://delightful-pebble-058f0fe03-partner.westeurope.1.azurestaticapps.net/init-game?lng=en&tokenAuth=ab301a75-dcb4-4584-bd27-43ca9deaf352&clientId=132&game_id=100101

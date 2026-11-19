@@ -96,7 +96,7 @@ export class LedgerService {
     }
 
     if (wallet.cashAvailableMinor < amountMinor) {
-      throw new Error(`INSUFFICIENT_FUNDS: Available cash £${(wallet.cashAvailableMinor / 100).toFixed(2)} is less than required £${(amountMinor / 100).toFixed(2)}`);
+      throw new Error(`INSUFFICIENT_FUNDS: Available cash ${(wallet.cashAvailableMinor / 100).toFixed(2)} is less than required ${(amountMinor / 100).toFixed(2)}`);
     }
 
     // Atomic state adjustment
@@ -277,6 +277,31 @@ export class LedgerService {
     this.processedIdempotencyKeys.add(idempotencyKey);
 
     return group;
+  }
+
+  /**
+   * Generic Payment Gateway Deposit Recording
+   * Debits PSP_CRYPTO_CLEARING, Credits CUSTOMER_CASH_LIABILITY, credits available balance
+   */
+  static async recordDeposit(
+    userId: string,
+    amountMinor: number,
+    idempotencyKey: string,
+    referenceNote: string = 'Payment Gateway Deposit'
+  ): Promise<LedgerTransactionGroup> {
+    return this.postCryptoDeposit(userId, amountMinor, idempotencyKey, referenceNote);
+  }
+
+  /**
+   * Request / Reserve Withdrawal
+   * Reserves available funds in user wallet atomically
+   */
+  static async requestWithdrawal(
+    userId: string,
+    amountMinor: number,
+    transactionId: string
+  ): Promise<boolean> {
+    return this.reserveCash(userId, amountMinor, transactionId);
   }
 
   /**

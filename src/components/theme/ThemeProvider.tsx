@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       applyTheme(saved);
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initial = prefersDark ? 'dark' : 'dark'; // Default to Bueno dark
+      const initial: Theme = prefersDark ? 'light' : 'light'; // Default to Devin Minimal Pro light
       setThemeState(initial);
       applyTheme(initial);
     }
@@ -82,7 +82,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 rounded-full bg-white/10 ${className}`} />
+      <div className={`w-9 h-9 rounded-full bg-[rgba(128,128,128,0.15)] ${className}`} />
     );
   }
 
@@ -94,16 +94,16 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       onClick={toggleTheme}
       className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-all select-none border active:scale-95 ${
         isDark
-          ? 'bg-[#242424] text-[#b45df0] border-white/15 hover:border-[#b45df0] hover:bg-white/10 shadow-sm'
-          : 'bg-white text-[#f59e0b] border-zinc-200 hover:bg-zinc-50 shadow-sm ring-1 ring-amber-400/30'
+          ? 'bg-[#1A1A1C] text-[#F2F2F2] border-white/15 hover:border-[#317CFF] shadow-sm'
+          : 'bg-white text-[#191919] border-[rgba(0,0,0,0.12)] hover:bg-[#F8F8F8] shadow-sm'
       } ${className}`}
       title={isDark ? 'Dark Mode (Click for White Mode)' : 'White Mode (Click for Dark Mode)'}
       aria-label={isDark ? 'Dark Mode (Click for White Mode)' : 'White Mode (Click for Dark Mode)'}
     >
       {isDark ? (
-        <Moon className="w-4 h-4 transition-transform hover:-rotate-12 text-[#b45df0]" />
+        <Moon className="w-4 h-4 transition-transform hover:-rotate-12 text-[#F2F2F2]" />
       ) : (
-        <Sun className="w-4 h-4 transition-transform hover:rotate-45 text-[#f59e0b]" />
+        <Sun className="w-4 h-4 transition-transform hover:rotate-45 text-[#191919]" />
       )}
     </button>
   );
